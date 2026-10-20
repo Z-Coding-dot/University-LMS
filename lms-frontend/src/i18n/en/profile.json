@@ -1,0 +1,22 @@
+{
+  "title": "My profile",
+  "description": "Your identity, preferences, and account security.",
+  "personalTitle": "Personal information",
+  "personalDescription": "Manage your profile preferences and preferred language.",
+  "institutionalTitle": "University record",
+  "institutionalDescription": "Your administrator manages these details.",
+  "id": "University ID",
+  "role": "Account role",
+  "department": "Department",
+  "currentSemester": "Current semester",
+  "notAssigned": "Not assigned",
+  "saved": "Your profile has been updated.",
+  "passwordTitle": "Change password",
+  "passwordDescription": "Use a unique password with at least 8 characters.",
+  "currentPassword": "Current password",
+  "newPassword": "New password",
+  "confirmPassword": "Confirm new password",
+  "updatePassword": "Update password",
+  "accountStatus": "Account status",
+  "managedAccount": "Your university administrator manages your name, email, and password. Contact them if any of these need to change."
+}
