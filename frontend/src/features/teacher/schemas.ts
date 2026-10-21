@@ -1,0 +1,12 @@
+import { z } from 'zod';
+import { isoDay, localizedName, numeric, positiveId, requiredText } from '../../lib/validation';
+import { ATTENDANCE_STATUSES, COURSE_WEEK_COUNT } from '../../config/constants';
+export const attendanceSchema = z.object({ date: isoDay, records: z.array(z.object({ student_id: positiveId, status: z.enum(ATTENDANCE_STATUSES) })).min(1, 'common:required') });
+export const gradeBatchSchema = z.object({ entries: z.array(z.object({ student_id: positiveId, component_id: positiveId, score: numeric(0), feedback: z.string().max(2000).nullable().optional() })).min(1, 'common:required') });
+export const componentSchema = z.object({ components: z.array(z.object({ id: positiveId.optional(), name: localizedName, max_score: numeric(0.01), weight: numeric(0, 100) })).min(1).refine(items => Math.abs(items.reduce((sum, item) => sum + item.weight, 0) - 100) < 0.000001, 'academic:weightsTotal') });
+export const weekNumber = numeric(1, COURSE_WEEK_COUNT).refine(Number.isInteger, 'academic:invalidWeek');
+const teachingContent = z.object({ offering_id: positiveId, week_number: weekNumber, title: requiredText.max(200), description: z.string().trim().max(10000).default(''), attachment_ids: z.array(positiveId).max(5).default([]) });
+const hasInstructions = (value: { description: string; attachment_ids: number[] }) => !!value.description || value.attachment_ids.length > 0;
+export const lectureSchema = teachingContent.refine(hasInstructions, { message: 'academic:instructionsRequired', path: ['description'] });
+export const assignmentSchema = teachingContent.extend({ due_date: isoDay, submission_enabled: z.boolean() }).refine(hasInstructions, { message: 'academic:instructionsRequired', path: ['description'] });
+export const submissionGradeSchema = z.object({ score: numeric(0, 100), feedback: z.string().max(2000).default('') });
