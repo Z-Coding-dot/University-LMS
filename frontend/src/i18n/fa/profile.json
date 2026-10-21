@@ -1,0 +1,23 @@
+{
+  "passwordManaged": "توسط مدیر پوهنتون تنظیم می‌شود",
+  "title": "پروفایل من",
+  "description": "مشخصات، ترجیحات و امنیت حساب شما.",
+  "personalTitle": "اطلاعات شخصی",
+  "personalDescription": "ترجیحات پروفایل و زبان دلخواه خود را تنظیم کنید.",
+  "institutionalTitle": "مشخصات تحصیلی",
+  "institutionalDescription": "این مشخصات توسط مدیر تنظیم می‌شود.",
+  "id": "شمارهٔ شناسایی",
+  "role": "نقش حساب",
+  "department": "دیپارتمنت",
+  "currentSemester": "سمستر فعلی",
+  "notAssigned": "تعیین نشده",
+  "saved": "پروفایل شما به‌روز شد.",
+  "passwordTitle": "تغییر رمز عبور",
+  "passwordDescription": "از رمز عبور منحصربه‌فرد با حداقل ۸ نویسه استفاده کنید.",
+  "currentPassword": "رمز عبور فعلی",
+  "newPassword": "رمز عبور جدید",
+  "confirmPassword": "تأیید رمز عبور جدید",
+  "updatePassword": "تغییر رمز عبور",
+  "accountStatus": "وضعیت حساب",
+  "managedAccount": "نام، ایمیل و رمز عبور شما توسط مدیر پوهنتون تنظیم می‌شود. برای تغییر هر یک، با مدیر تماس بگیرید."
+}
