@@ -22,8 +22,17 @@ export interface DashboardClass {
   id: number; offering_id: number; course: LocalizedName; start: string; end: string; room: string; teacher: string;
 }
 export interface DashboardAnnouncement extends Announcement { author_name: string }
+export interface DashboardWork {
+  kind: 'attendance' | 'grades'; offering_id: number; course: LocalizedName;
+  date: string | null; pending: number;
+}
+export interface DashboardSubmission {
+  id: number; assignment_id: number; title: string; course: LocalizedName;
+  student_name: string; submitted_at: string; score: number | null;
+}
 export interface DashboardSummary {
   role: Role; as_of: string; semester: Semester | null; metrics: DashboardMetric[];
   courses: DashboardCourse[]; today: DashboardClass[]; latest_grades: DashboardGrade[];
   announcements: DashboardAnnouncement[]; attendance_series: { label: string; attendance: number }[];
+  pending_work: DashboardWork[]; recent_submissions: DashboardSubmission[];
 }

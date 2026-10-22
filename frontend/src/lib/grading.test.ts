@@ -1,9 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { attendancePercentage, canTransitionGrade, courseTotal, cumulativeAverage, isPassing, letterGrade, semesterAverage, studentVisibleGrades } from './grading';
+import { assessmentKind, attendancePercentage, canTransitionGrade, courseTotal, cumulativeAverage, isPassing, letterGrade, semesterAverage, studentGradeBreakdown, studentVisibleGrades, validGradeComponentRevision } from './grading';
 describe('academic calculations (display previews)', () => {
+  it('maps assessment labels without assigning weights or treating custom components as finals', () => {
+    expect(assessmentKind('Midterm')).toBe('midterm');
+    expect(assessmentKind('End-term exam')).toBe('endterm');
+    expect(assessmentKind('Final exam')).toBe('final');
+    expect(assessmentKind('FX')).toBe('fx');
+    expect(assessmentKind('Final project')).toBeNull();
+  });
+  it('keeps results scoped to the student and hides draft scores and feedback', () => {
+    const component = { id: 1, offering_id: 4, name: { fa: '', en: 'Midterm' }, max_score: 40, weight: 40 };
+    const entry = { id: 1, student_id: 5, component_id: 1, score: 0, feedback: 'Private feedback', status: 'published' as const, updated_at: '2026-10-21T00:00:00Z' };
+    expect(studentGradeBreakdown([component], [entry], 5, 'published')[0].score).toBe(0);
+    expect(studentGradeBreakdown([component], [entry], 5, 'draft')[0]).toMatchObject({ score: null, feedback: null });
+    expect(studentGradeBreakdown([component], [{ ...entry, status: 'draft' }], 5, 'published')[0]).toMatchObject({ score: null, feedback: null });
+    expect(studentGradeBreakdown([component], [entry], 6, 'published')[0]).toMatchObject({ score: null, feedback: null });
+  });
   it('weights normalized component scores', () => expect(courseTotal([{ score: 15, max_score: 20, weight: 40 }, { score: 45, max_score: 60, weight: 60 }])).toBe(75));
   it('rejects incomplete weights, over-max scores and nonfinite values', () => {
     for (const component of [{ score: 5, max_score: 10, weight: 20 }, { score: 11, max_score: 10, weight: 100 }, { score: NaN, max_score: 10, weight: 100 }]) expect(() => courseTotal([component])).toThrow(RangeError);
+  });
+  it('rejects duplicate component IDs and maxima below retained scores', () => {
+    const entries = [{ component_id: 1, score: 18 }];
+    expect(validGradeComponentRevision([{ id: 1, max_score: 20 }], entries)).toBe(true);
+    expect(validGradeComponentRevision([{ id: 1, max_score: 10 }], entries)).toBe(false);
+    expect(validGradeComponentRevision([{ id: 1, max_score: 20 }, { id: 1, max_score: 20 }], entries)).toBe(false);
+    expect(validGradeComponentRevision([{ max_score: 10 }], entries)).toBe(true);
   });
   it('weights cumulative results by credits rather than semester means', () => {
     expect(semesterAverage([{ total: 80, credits: 3 }, { total: 60, credits: 1 }])).toBe(75);
@@ -21,6 +43,11 @@ describe('academic calculations (display previews)', () => {
     expect(attendancePercentage(['present', 'late', 'excused', 'absent'])).toBe(75);
     expect(attendancePercentage(['present', 'late'], ['present'])).toBe(50);
     expect(attendancePercentage([])).toBeNull();
+  });
+  it('includes sessions without a record in the denominator', () => {
+    expect(attendancePercentage(['present'], ['present'], 4)).toBe(25);
+    expect(attendancePercentage([], ['present'], 2)).toBe(0);
+    for (const total of [-1, 0, 1.5, NaN]) expect(() => attendancePercentage(['present'], ['present'], total)).toThrow(RangeError);
   });
   it('protects the grade lifecycle and excludes drafts', () => {
     expect(canTransitionGrade('draft', 'published', 'teacher', ['grades.publish'])).toBe(true);

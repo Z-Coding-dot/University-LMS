@@ -2,7 +2,7 @@
   "week": "Teaching week",
   "weekNumber": "Week {{value}}",
   "weeklyLearning": "Weekly learning",
-  "weeksDescription": "16 weeks of lectures, materials and assignments for this subject.",
+  "weeksDescription": "Open the current week or choose All weeks. Expand a week to see its instructions, lectures, files and assignment grades.",
   "semesterSubjects": "Expand or collapse current semester subjects",
   "noSemesterSubjects": "No subjects enrolled for this semester yet.",
   "lectures": "Lectures and materials",
@@ -57,7 +57,11 @@
   "description": "Description",
   "createAnnouncement": "Create announcement",
   "audience": "Audience",
-  "audiences": { "all": "Everyone", "role": "A role", "offering": "A course" },
+  "audiences": {
+    "all": "Everyone",
+    "role": "A role",
+    "offering": "A course"
+  },
   "role": "Role",
   "details": "View details",
   "edit": "Edit",
@@ -114,5 +118,29 @@
   "invalidFiles": "Choose valid files for this course.",
   "deadlinePassed": "The submission deadline has passed.",
   "alreadyGraded": "This submission has been graded and cannot be changed.",
-  "invalidCourse": "The selected course is invalid."
+  "invalidCourse": "The selected course is invalid.",
+  "attendanceWarning": "Attendance is below the university warning threshold of {{threshold}}%. Sessions without a record are included in the percentage.",
+  "allWeeks": "All weeks",
+  "currentWeek": "Current week",
+  "currentWeekLabel": "Current: {{week}}",
+  "weekContentCounts": "{{lectures}} lectures · {{assignments}} assignments · {{notices}} notices",
+  "weekNotices": "Weekly announcements and instructions",
+  "courseNotices": "Course announcements",
+  "courseWideNotice": "Course-wide",
+  "addNotice": "Add announcement / instructions",
+  "weekRequiresCourse": "A weekly announcement must belong to a course.",
+  "assignmentGrades": "Assignment grades",
+  "assignmentGradesHint": "All assignments for this course, with your submission status, score and feedback.",
+  "graded": "Graded",
+  "noAssignments": "No assignments yet",
+  "notConfigured": "Not configured",
+  "assessmentWeight": "Weight: {{value}}%",
+  "assignmentGradeCount": "{{graded}} / {{total}} graded · show all",
+  "assessmentKinds": {
+    "midterm": "Midterm",
+    "endterm": "Endterm",
+    "final": "Final",
+    "fx": "FX"
+  },
+  "resultsBreakdownHint": "Course totals follow the configured assessment weights. Expand assignment grades to see every assignment score and feedback."
 }

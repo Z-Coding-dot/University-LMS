@@ -55,12 +55,27 @@ export const attendanceSessions: AttendanceSession[] = offerings.flatMap(offerin
 export const attendanceRecords: AttendanceRecord[] = attendanceSessions.flatMap(session => users.filter(u => u.role === 'student').map((user, index) => ({ id: (session.id - 1) * 25 + index + 1, session_id: session.id, student_id: user.id, status: index % 4 === 0 ? ATTENDANCE_STATUSES[(index + session.id) % 4] : 'present' })));
 export const lectures: Lecture[] = offerings.map(offering => ({ id: offering.id, offering_id: offering.id, week_number: 4, title: 'درس هفتهٔ چهارم / Week four lecture', description: 'منابع این هفته را مطالعه کرده و سپس وظیفهٔ درسی را تکمیل کنید. / Read this week’s material before completing the assignment.', attachments: [studyMaterials[offering.course_id - 1]], updated_at: '2026-10-19T08:00:00Z' }));
 export const assignments: Assignment[] = offerings.map(offering => ({ id: offering.id, offering_id: offering.id, week_number: 4, submission_enabled: true, title: 'تمرین عملی / Practical exercise', description: 'تمرین فصل اول را تکمیل کنید. / Complete the chapter one exercise.', due_at: offering.semester_id === 1 ? '2026-06-28T12:00:00Z' : `2026-10-${25 + offering.id % 3}T12:00:00Z`, attachments: [studyMaterials[offering.course_id - 1]] }));
-export const submissions: Submission[] = [{ id: 1, assignment_id: 4, student_id: 5, files: [], submitted_at: '2026-10-19T08:00:00Z', score: null, feedback: null }];
-export const announcements: Announcement[] = [
-  { id: 1, title: 'آغاز سمستر خزانی / Autumn semester', body: 'به سمستر جدید خوش آمدید. / Welcome to the new semester.', audience: 'all', role: null, offering_id: null, author_id: 1, created_at: '2026-09-01T06:00:00Z' },
-  { id: 2, title: 'منابع درسی جدید / New learning materials', body: 'منابع درسی جدید در حساب شما آماده است. پیش از درس بعدی آن‌ها را مرور کنید. / New study packs are available in your workspace. Review them before your next class.', audience: 'all', role: null, offering_id: null, author_id: 1, created_at: '2026-10-19T07:00:00Z' },
-  { id: 3, title: 'جلسهٔ علمی استادان / Faculty meeting', body: 'جلسهٔ علمی این هفته روز پنج‌شنبه برگزار می‌شود. / This week’s faculty meeting will take place on Thursday.', audience: 'role', role: 'teacher', offering_id: null, author_id: 1, created_at: '2026-10-18T07:00:00Z' },
+for (const offering of offerings.filter(item => item.semester_id === 2)) {
+  for (const week of [5, 8]) {
+    const id = offering.id + (week === 5 ? 3 : 6);
+    lectures.push({ id, offering_id: offering.id, week_number: week, title: 'مطالعه و تمرین / Reading and practice', description: 'فایل درس را مطالعه کرده و نکات مهم را یادداشت کنید. / Read the lecture file and take notes on the key points.', attachments: [studyMaterials[offering.course_id - 1]], updated_at: '2026-10-21T08:00:00Z' });
+    assignments.push({ id, offering_id: offering.id, week_number: week, submission_enabled: true, title: 'وظیفهٔ هفتگی / Weekly practice', description: 'تمرین این هفته را تکمیل کرده و فایل پاسخ را تسلیم کنید. / Complete this week’s exercise and submit your answer file.', due_at: week === 5 ? '2026-10-28T19:29:59Z' : '2026-10-30T19:29:59Z', attachments: [] });
+  }
+}
+export const submissions: Submission[] = [
+  { id: 1, assignment_id: 4, student_id: 5, files: [], submitted_at: '2026-10-19T08:00:00Z', score: 82, feedback: 'کار خوب است. / Good work.' },
+  { id: 2, assignment_id: 5, student_id: 5, files: [], submitted_at: '2026-10-21T08:00:00Z', score: null, feedback: null },
 ];
+export const announcements: Announcement[] = [
+  { id: 1, title: 'آغاز سمستر خزانی / Autumn semester', body: 'به سمستر جدید خوش آمدید. / Welcome to the new semester.', audience: 'all', role: null, offering_id: null, week_number: null, author_id: 1, created_at: '2026-09-01T06:00:00Z' },
+  { id: 2, title: 'منابع درسی جدید / New learning materials', body: 'منابع درسی جدید در حساب شما آماده است. پیش از درس بعدی آن‌ها را مرور کنید. / New study packs are available in your workspace. Review them before your next class.', audience: 'all', role: null, offering_id: null, week_number: null, author_id: 1, created_at: '2026-10-19T07:00:00Z' },
+  { id: 3, title: 'جلسهٔ علمی استادان / Faculty meeting', body: 'جلسهٔ علمی این هفته روز پنج‌شنبه برگزار می‌شود. / This week’s faculty meeting will take place on Thursday.', audience: 'role', role: 'teacher', offering_id: null, week_number: null, author_id: 1, created_at: '2026-10-18T07:00:00Z' },
+];
+announcements.push(
+  { id: 4, title: 'رهنمای هفتهٔ پنجم / Week five guidance', body: 'پیش از تکمیل وظیفه، مثال‌های درس را مرور کنید. / Review the lecture examples before completing the assignment.', audience: 'offering', role: null, offering_id: 4, week_number: 5, author_id: 2, created_at: '2026-10-02T08:00:00Z' },
+  { id: 5, title: 'رهنمای این هفته / This week’s instructions', body: 'فایل درسی این هفته را مطالعه و تمرین مربوط را تکمیل کنید. / Read this week’s lecture material and complete the related exercise.', audience: 'offering', role: null, offering_id: 4, week_number: 8, author_id: 2, created_at: '2026-10-21T08:00:00Z' },
+  { id: 6, title: 'رهنمای عمومی مضمون / Course guidance', body: 'منابع و وظایف هر هفته را در بخش همان هفته پیدا می‌کنید. / Find each week’s materials and assignments in its weekly section.', audience: 'offering', role: null, offering_id: 4, week_number: null, author_id: 2, created_at: '2026-09-01T08:00:00Z' },
+);
 export const settings: AcademicSettings = {
   pass_mark: 55,
   letter_scale: [{ min: 90, max: 100, letter: 'A' }, { min: 80, max: 90, letter: 'B' }, { min: 70, max: 80, letter: 'C' }, { min: 55, max: 70, letter: 'D' }, { min: 0, max: 55, letter: 'F' }],

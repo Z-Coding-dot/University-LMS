@@ -34,7 +34,7 @@ export function Select({ options, onValueChange, value, placeholder, disabled, .
   const { dir } = useDir(); const { t } = useTranslation();
   return <SelectPrimitive.Root value={value} onValueChange={onValueChange} disabled={disabled} dir={dir}>
     <SelectPrimitive.Trigger className={cn(inputStyles, 'flex items-center justify-between gap-2 text-start')} {...props}>
-      <SelectPrimitive.Value placeholder={placeholder ?? t('select')} /><SelectPrimitive.Icon><ChevronDown size={16} /></SelectPrimitive.Icon>
+      <span className="min-w-0 flex-1 truncate text-start"><SelectPrimitive.Value placeholder={placeholder ?? t('select')} /></span><SelectPrimitive.Icon className="shrink-0"><ChevronDown size={16} /></SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
     <SelectPrimitive.Portal><SelectPrimitive.Content position="popper" sideOffset={6} className="z-[70] max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-auto rounded-xl border bg-white p-1 shadow-soft" dir={dir}>
       <SelectPrimitive.Viewport>{options.map(option => <SelectPrimitive.Item key={option.value} value={option.value} disabled={option.disabled} className="relative flex min-h-11 cursor-pointer items-center rounded-lg ps-9 pe-3 outline-none data-[highlighted]:bg-orange-50 data-[disabled]:opacity-40">

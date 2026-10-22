@@ -1,4 +1,6 @@
 {
+  "academicPlacement": "تعیین مشخصات تحصیلی",
+  "placementHint": "سمستر جاری و دیپارتمنت اصلی را تعیین کنید. دسترسی به مضمون همچنان به شمولیت در ارائهٔ آن نیاز دارد.",
   "structureTitle": "ساختار تحصیلی",
   "structureDescription": "ایجاد و ویرایش پوهنځی‌ها، دیپارتمنت‌ها، سال‌های تحصیلی، سمسترها و مضمون‌ها.",
   "structureResources": { "faculties": "پوهنځی‌ها", "departments": "دیپارتمنت‌ها", "academic-years": "سال‌های تحصیلی", "semesters": "سمسترها", "courses": "مضمون‌ها" },

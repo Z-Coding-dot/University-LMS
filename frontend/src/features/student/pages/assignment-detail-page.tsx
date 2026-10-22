@@ -15,7 +15,7 @@ export function AssignmentDetailPage() {
   const { t } = useTranslation('academic'); const { locale } = useDir();
   const query = useAcademicQuery(['assignment', id], () => academicApi.assignment(id), valid);
   if (!valid) return <ErrorPage kind="notFound" />;
-  return <QueryState pending={query.isPending} error={query.isError} retry={query.refetch}>{query.data && <div className="space-y-6">
+  return <QueryState pending={query.isPending} error={query.error} retry={query.refetch}>{query.data && <div className="space-y-6">
     <PageHeader title={query.data.title} description={`${query.data.course_name[locale]} · ${t('weekNumber', { value: formatNumber(query.data.week_number, locale) })}`} actions={<Link className={buttonStyles({ variant: 'secondary' })} to={`/courses/${query.data.offering_id}?tab=weeks&week=${query.data.week_number}`}>{t('backToWeek')}</Link>} />
     <Card><AssignmentDetails key={`${id}-${query.data.submission?.submitted_at ?? 'new'}`} assignment={query.data} /></Card>
   </div>}</QueryState>;

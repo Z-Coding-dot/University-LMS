@@ -3,6 +3,12 @@ import type { Config } from 'tailwindcss';
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: { extend: {
+    fontSize: {
+      xs: ['0.6875rem', '1.5'], sm: ['0.75rem', '1.6'], base: ['0.75rem', '1.65'],
+      lg: ['0.8125rem', '1.6'], xl: ['0.875rem', '1.5'], '2xl': ['1rem', '1.4'],
+      '3xl': ['1.125rem', '1.35'], '4xl': ['1.375rem', '1.3'],
+      '5xl': ['1.625rem', '1.25'], '6xl': ['1.875rem', '1.2'],
+    },
     colors: {
       brand: 'rgb(var(--brand) / <alpha-value>)',
       'brand-action': 'rgb(var(--brand-action) / <alpha-value>)',

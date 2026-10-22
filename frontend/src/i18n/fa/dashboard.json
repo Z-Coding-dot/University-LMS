@@ -4,7 +4,11 @@
   "deadlinePreviewDescription": "تا سه مهلت نیازمند رسیدگی، شامل وظایف مهلت‌گذشته؛ فهرست کامل در بخش وظایف درسی است.",
   "noDeadlines": "مهلت وظیفه‌ای وجود ندارد",
   "noDeadlinesDescription": "وظایف درسی مضمون‌های شما پس از ثبت در اینجا نمایش داده می‌شود.",
-  "titles": { "student": "داشبورد آموزشی من", "teacher": "داشبورد استاد", "admin": "داشبورد پوهنتون" },
+  "titles": {
+    "student": "داشبورد آموزشی من",
+    "teacher": "داشبورد استاد",
+    "admin": "داشبورد پوهنتون"
+  },
   "welcome": "خوش آمدید، {{name}}",
   "overview": "روز تحصیلی شما در یک نگاه.",
   "search": "جستجو در حاضری مضمون‌ها…",
@@ -14,8 +18,22 @@
   "semesterNotAssigned": "سمستر تعیین نشده است",
   "notAvailable": "هنوز اطلاعاتی نیست",
   "percentSign": "٪",
-  "metrics": { "average": "اوسط نتایج نشرشده", "attendance": "حاضری", "courses": "مضامین فعلی", "students": "محصلان", "teachers": "استادان", "reviews": "در انتظار بررسی" },
-  "metricHints": { "average": "اوسط نتایج تکمیل‌شده بر اساس کریدیت", "attendance": "بر اساس جلسات ثبت‌شده", "courses": "در سمستر فعلی", "students": "در فضای تحصیلی شما", "teachers": "کادر تدریسی پوهنتون", "reviews": "وظایف تحویل‌شده در انتظار نمره" },
+  "metrics": {
+    "average": "اوسط نتایج نشرشده",
+    "attendance": "حاضری",
+    "courses": "مضامین فعلی",
+    "students": "محصلان",
+    "teachers": "استادان",
+    "reviews": "در انتظار بررسی"
+  },
+  "metricHints": {
+    "average": "اوسط نتایج تکمیل‌شده بر اساس کریدیت",
+    "attendance": "بر اساس تمام جلسات درسی",
+    "courses": "در سمستر فعلی",
+    "students": "در فضای تحصیلی شما",
+    "teachers": "کادر تدریسی پوهنتون",
+    "reviews": "وظایف تحویل‌شده در انتظار نمره"
+  },
   "courseProgress": "حاضری مضامین",
   "courseProgressDescription": "حاضری ثبت‌شدهٔ مضامین فعلی؛ برای فیلتر، یک مضمون را انتخاب کنید.",
   "sessionsCount": "{{value}} جلسه",
@@ -30,7 +48,14 @@
   "dueDate": "مهلت تحویل",
   "submissionRate": "تحویل‌شده",
   "status": "وضعیت",
-  "taskStatuses": { "pending": "در انتظار تحویل", "submitted": "تحویل‌شده", "graded": "نمره داده شده", "overdue": "مهلت گذشته", "review": "آمادهٔ بررسی", "complete": "بررسی تکمیل شد" },
+  "taskStatuses": {
+    "pending": "در انتظار تحویل",
+    "submitted": "تحویل‌شده",
+    "graded": "نمره داده شده",
+    "overdue": "مهلت گذشته",
+    "review": "آمادهٔ بررسی",
+    "complete": "بررسی تکمیل شد"
+  },
   "viewDetails": "مشاهدهٔ جزئیات",
   "score": "نمره",
   "feedback": "نظر استاد",
@@ -54,5 +79,18 @@
   "announcementsDescription": "تازه‌ترین خبرهای پوهنتون شما.",
   "noAnnouncements": "اعلان تازه‌ای وجود ندارد",
   "noAnnouncementsDescription": "خبرهای پوهنتون و مضامین در اینجا نمایش داده می‌شوند.",
-  "notifications": "تازه‌ترین اعلانات"
+  "notifications": "تازه‌ترین اعلانات",
+  "staffActivity": "فعالیت‌های تدریسی",
+  "staffActivityDescription": "کارهای حاضری و نمرات مضامین سمستر جاری، تکالیف تسلیم‌شدهٔ اخیر و نمرات نشرشده.",
+  "pendingWork": "حاضری و نمرات در انتظار",
+  "pendingWorkDescription": "ثبت‌های ناقص حاضری و نمرات پیش‌نویس. حتی اگر نمرهٔ ثبت‌نشده صفر باشد، پیش‌نویس باید بررسی و نشر شود.",
+  "noPendingWork": "حاضری ناقص یا نمرات پیش‌نویس وجود ندارد",
+  "recentSubmissions": "تکالیف تسلیم‌شدهٔ اخیر",
+  "noSubmissions": "هنوز تکلیفی تسلیم نشده است",
+  "workType": "کار",
+  "workKinds": {
+    "attendance": "تکمیل حاضری",
+    "grades": "بررسی نمرات پیش‌نویس"
+  },
+  "missingRecords": "ثبت‌های باقی‌مانده"
 }

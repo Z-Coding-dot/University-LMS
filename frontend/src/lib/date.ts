@@ -18,6 +18,10 @@ export function parseISO(value: string): Date {
   return date;
 }
 
+export function isoWeekday(date = new Date()): number {
+  return ((parseISO(calendarDay(date)).getUTCDay() + 6) % 7) + 1;
+}
+
 export function formatDate(value: string, locale: Locale): string {
   const date = parseISO(value);
   const language = locale === 'fa' ? 'fa-AF-u-ca-persian-nu-arabext' : 'en-US';

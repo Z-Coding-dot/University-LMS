@@ -30,7 +30,7 @@ describe('dashboard data visibility', () => {
     expect(publishedCourseTotal(components, entries, 99)).toBeNull();
   });
   it('filters role and offering announcements before sending dashboard data', () => {
-    const items: Announcement[] = ['all', 'role', 'offering'].map((audience, index) => ({ id: index, title: '', body: '', audience: audience as Announcement['audience'], role: 'teacher', offering_id: 3, author_id: 1, created_at: '2026-10-19T08:00:00Z' }));
+    const items: Announcement[] = ['all', 'role', 'offering'].map((audience, index) => ({ id: index, title: '', body: '', audience: audience as Announcement['audience'], role: 'teacher', offering_id: 3, week_number: null, author_id: 1, created_at: '2026-10-19T08:00:00Z' }));
     expect(visibleDashboardAnnouncements(user('student'), items, [3]).map(item => item.id)).toEqual([0, 2]);
     expect(visibleDashboardAnnouncements(user('student'), items, []).map(item => item.id)).toEqual([0]);
     expect(visibleDashboardAnnouncements(user('admin'), items, []).map(item => item.id)).toEqual([0, 1, 2]);

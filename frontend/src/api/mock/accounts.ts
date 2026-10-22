@@ -2,10 +2,11 @@ import type { User } from '../types';
 import { canManageAccounts } from '../../lib/account-policy';
 import { accountIdentitySchema, accountStatusSchema, createAccountSchema, teacherPermissionsSchema } from '../../features/admin/schemas';
 import { fail, nextId, page, respond, validate, type MockContext } from './http';
-import { users } from './fixtures';
+import { departments, semesters, users } from './fixtures';
+import { studentAcademicProfileSchema } from '../../features/admin/academic-schemas';
 
 export function handleAccounts(ctx: MockContext) {
-  const match = ctx.path.match(/^\/admin\/(students|teachers)(?:\/(\d+)(?:\/(reset-password|status|permissions))?)?$/);
+  const match = ctx.path.match(/^\/admin\/(students|teachers)(?:\/(\d+)(?:\/(reset-password|status|permissions|academic-profile))?)?$/);
   if (!match) return undefined;
   if (!canManageAccounts(ctx.user)) return fail(ctx);
   const role = match[1] === 'students' ? 'student' : 'teacher';
@@ -38,6 +39,12 @@ export function handleAccounts(ctx: MockContext) {
   }
   if (action === 'permissions' && role === 'teacher' && ctx.method === 'PUT') {
     target.permissions = validate(teacherPermissionsSchema, ctx.body, ctx.config).permissions;
+    return ok(target);
+  }
+  if (action === 'academic-profile' && role === 'student' && ctx.method === 'PATCH') {
+    const input = validate(studentAcademicProfileSchema, ctx.body, ctx.config);
+    if ((input.department_id !== null && !departments.some(row => row.id === input.department_id)) || (input.current_semester_id !== null && !semesters.some(row => row.id === input.current_semester_id))) return fail(ctx, 422, 'admin:invalidParent');
+    Object.assign(target.profile, input);
     return ok(target);
   }
   return fail(ctx, 404, 'common:notFoundTitle');

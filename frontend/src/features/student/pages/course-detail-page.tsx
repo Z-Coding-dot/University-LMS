@@ -21,7 +21,6 @@ import { CourseWeeks } from '../components/course-weeks';
 import { AttendanceEntry } from '../../teacher/components/attendance-entry';
 import { GradeEntry } from '../../teacher/components/grade-entry';
 import { Assignments } from '../../teacher/components/assignments';
-import { AnnouncementsPage } from '../../announcements/pages/announcements-page';
 
 function CourseRoster({ id }: { id: number }) {
   const { t } = useTranslation('academic'); const { locale } = useDir();
@@ -47,18 +46,18 @@ export function CourseDetailPage() {
     { value: 'attendance', label: t('attendance'), content: student ? <CourseRecords id={id} kind="attendance" /> : <AttendanceEntry id={id} /> },
     ...(student || can(user, PERMISSIONS.enterGrades) || can(user, PERMISSIONS.publishGrades) ? [{ value: 'grades', label: t('grades'), content: student ? <CourseRecords id={id} kind="grades" /> : <GradeEntry id={id} /> }] : []),
     { value: 'assignments', label: t('assignments'), content: <Assignments offeringId={id} /> },
-    { value: 'announcements', label: t('announcements'), content: <AnnouncementsPage offeringId={id} embedded /> },
   ];
   const active = tabs.find(tab => tab.value === params.get('tab'))?.value ?? tabs[0].value;
   return <>
     <Link to="/courses" className={buttonStyles({ variant: 'ghost' })}><ArrowLeft size={18} aria-hidden="true" className="rtl:rotate-180" />{t('backToCourses')}</Link>
-    <QueryState pending={query.isPending} error={query.isError} retry={query.refetch}>
+    <QueryState pending={query.isPending} error={query.error} retry={query.refetch}>
       {query.data && <div className="space-y-6">
         <PageHeader title={query.data.course.name[locale]} description={`${query.data.course.code} · ${query.data.semester.name[locale]}`} actions={<Badge tone="brand">{t('creditCount', { value: formatNumber(query.data.course.credits, locale) })}</Badge>} />
         <Card className="flex flex-wrap gap-x-8 gap-y-3">
           <p><span className="text-gray-500">{t('teacher')}: </span>{query.data.teacher.name}</p>
           {student ? <p><span className="text-gray-500">{t('attendance')}: </span>{query.data.attendance_percent === null ? t('notMarked') : formatNumber(query.data.attendance_percent / 100, locale, { style: 'percent', maximumFractionDigits: 0 })}</p> : <p><span className="text-gray-500">{t('students')}: </span>{formatNumber(query.data.student_count, locale)}</p>}
         </Card>
+        {student && query.data.attendance_percent !== null && query.data.attendance_percent < query.data.settings.attendance_warning_threshold && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">{t('attendanceWarning', { threshold: formatNumber(query.data.settings.attendance_warning_threshold, locale) })}</p>}
         <Tabs label={t('courseSections')} tabs={tabs} value={active} onValueChange={value => setParams(previous => { previous.set('tab', value); return previous; }, { replace: true })} />
       </div>}
     </QueryState>

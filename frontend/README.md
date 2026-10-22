@@ -6,18 +6,19 @@ change, profile/security, responsive app navigation, reusable UI, and mock API.
 Administrators can create, edit, reset passwords and activate/deactivate student
 and teacher accounts. Teacher permission switches and presets are available in
 Teacher accounts. Overview shows role metrics and three-item previews for
-deadlines, today's classes and announcements. Courses open role-aware detail tabs for attendance,
-grades, assignments and announcements. Student results, teacher attendance/grade
+deadlines, today's classes and announcements. Courses open role-aware detail tabs for weekly learning, attendance,
+grades and assignments. Course notices are inside Weekly learning. Student results, teacher attendance/grade
 entry, assignment submissions/review, and the weekly timetable are connected.
-Admin academic structure, offerings/enrollment,
-settings and grade unlocking remain unfinished. See [the progress review](docs/FRONTEND_PROGRESS.md).
+Admin academic structure, offerings, instructor assignment, enrollment, class
+schedules, grading/attendance settings and grade unlocking are connected in mock
+mode. See [the progress review](docs/FRONTEND_PROGRESS.md) for validation limits.
 
 ## Run locally
 
 Use Node.js 22.12+ and npm. From the repository workspace:
 
 ```powershell
-cd lms-frontend
+cd frontend
 npm.cmd ci
 Copy-Item .env.example .env
 npm.cmd run dev
@@ -71,19 +72,30 @@ Overview includes role metrics, quick links and up to three deadlines needing
 attention, today's classes and announcements. It has no full tables or attendance
 charts. Deadlines open the course's assignment tab, and “View all” opens the related
 section. Performance owns course attendance rings, search and the attendance chart;
-Learning files owns the searchable download table. Courses, results/gradebook,
-assignments, timetable and announcements each have their own pages.
+Staff retain searchable Learning files and Performance sections. Student navigation
+shows Overview, Courses, Results and Timetable, with profile in the account menu.
+Student assignments and learning files are inside courses; general announcements
+are read on Overview or in the notification popover.
 
-The sidebar uses a solid dark surface with an orange active state. Collapse/expand
-is beside the logo at the top in both widths; the visible scrollbar is hidden,
-with keyboard/wheel scrolling retained. Compact links have labels and tooltips.
-The notification button opens recent announcements and links to the announcements
-page. Mobile stacks panels and uses shared DataTable cards, 10 records per page.
+Staff also see up to three pending attendance/grade tasks and recent submissions;
+administrators see recent published scores. **Teaching activity** opens the full
+searchable, paginated lists. Each item opens its course tab/date or assignment
+review, with permissions and teacher ownership enforced by the mock API.
+
+The sidebar uses a solid dark surface with an orange active state. Collapse is
+beside the expanded logo; the collapsed expand button moves below the logo and
+appears on hover/focus, remaining visible on touch devices. The scrollbar is hidden
+with keyboard/wheel scrolling retained. Account identity, role and sign-out are in
+the topbar profile menu. Notifications open announcement details directly. Shared
+typography uses a compact 12px base on desktop/mobile while preserving 44px touch
+targets. Mobile stacks panels and uses shared DataTable cards, 10 records per page.
 
 All data comes through typed dashboard endpoints. Students receive only their own
 enrollment and published grades; teachers receive assigned offerings. New students
 without enrollment get empty states. Course averages omit incomplete/draft results;
-progress rings show recorded attendance rather than estimated course completion.
+progress rings count all class sessions, including sessions with unrecorded
+attendance. Student course details warn below the configured attendance threshold;
+history labels sessions without a record as unmarked.
 The university timezone determines today's schedule. The read-only dashboard does
 not add academic editing permissions or change student account restrictions.
 
@@ -101,9 +113,59 @@ switching off mock mode requires only `VITE_USE_MOCK=false`; the contract is in
 credentialed CORS and CSRF configuration on Laravel. Deployment must rewrite
 non-asset frontend paths to `index.html` for React Router's history routes.
 Vite proxies `/api` and `/sanctum` to `http://localhost:8000` during development.
-The existing `lms-frontend/` directory is retained. `npm.cmd run build:deploy`
-builds `lms-frontend/dist` and copies it into `../backend/public` only when that
+The application lives in `frontend/`. `npm.cmd run build:deploy`
+builds `frontend/dist` and copies it into `../backend/public` only when that
 directory exists; it never creates a backend or removes backend files.
+
+## Semester subjects and 16-week learning
+
+The student Courses navigation expands into enrolled subjects for their current
+semester, showing subject names/codes and instructors. It loads ten entries at a
+time when needed; the count is driven by university enrollment, never fixed at
+seven. The mobile drawer offers the same submenu; the Courses page lists subjects
+with the shared responsive table. Each subject opens **Weekly learning** by
+default, with Week 1–16 and **All weeks** selection. The current week opens by
+default and is highlighted; All weeks shows every week heading and content counts
+with the current week expanded. Other weeks load their paginated content on opening.
+Course-wide and weekly announcements/instructions are shown here, with lecture
+downloads and assignment submission status, grades and feedback.
+
+An assigned teacher needs `materials.manage` to upload weekly lecture text/files
+and `assignments.manage` to create weekly assignments. The teaching/full presets
+include lecture management. For an assignment, choose its week, text and/or
+instruction attachments, deadline and whether student submissions are enabled.
+Its detail page shows instructions and instruction files above the student's
+completed-work upload area. Submitted files can be replaced until the deadline
+and before grading; closed/disabled/graded assignments explain the restriction.
+The mock API repeats ownership, enrollment, week and submission checks.
+
+Seeded lectures/assignments are in **Weeks 4, 5 and 8**, with downloadable study packs
+and examples of graded/pending work. Empty weeks remain selectable. Staff Learning files includes lecture and assignment
+instruction attachments, deduplicated per offering/file. Mock uploads are page-local
+object URLs; a real backend must persist and authorize their downloads.
+
+## Admin academic workflow
+
+1. In **Academic structure**, create/edit faculties, departments, academic years,
+   semesters and subjects. Semester dates must fit inside their academic year.
+2. Create/activate a teacher account and grant the required academic permissions.
+3. In **Offerings & enrollment**, create an offering by choosing subject,
+   semester, instructor and capacity. Existing offerings keep their subject/semester.
+4. Use **Enroll students** to select active students. The explicit current-semester
+   switch can set the selected semester on their profiles. Enrollment is additive;
+   academic history is preserved and capacity/schedule conflicts are checked.
+5. Use **Academic placement** in Student accounts to change a student's home
+   department/current semester independently. This never enrolls them automatically.
+6. Edit class times using weekday/start/end/room controls. The mock rejects overlap
+   for an instructor, room or enrolled student in the same semester.
+7. Configure grading ranges, pass mark, attendance statuses/threshold and weekends
+   in **Academic settings**. Grade ranges must cover 0–100 without gaps/overlap.
+8. Use **Unlock grades** to reopen a locked gradebook as published. Authorized
+   teachers can then edit it; published grades remain visible to students.
+
+All changes above are in-memory in mock mode and reset on refresh. The current
+build is a frontend milestone; real Laravel persistence, deployment and browser
+workflow validation are separate remaining work.
 
 ## Architecture and shared components
 

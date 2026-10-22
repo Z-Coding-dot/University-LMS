@@ -1,4 +1,6 @@
 {
+  "academicPlacement": "Academic placement",
+  "placementHint": "Choose the current semester and home department. Subject access still requires enrollment in an offering.",
   "structureTitle": "Academic structure",
   "structureDescription": "Create and edit faculties, departments, academic years, semesters and subject definitions.",
   "structureResources": { "faculties": "Faculties", "departments": "Departments", "academic-years": "Academic years", "semesters": "Semesters", "courses": "Subjects" },

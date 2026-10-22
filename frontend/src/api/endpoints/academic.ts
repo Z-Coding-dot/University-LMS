@@ -1,15 +1,16 @@
 import { api } from '../client';
 import type { ApiResponse, Assignment, Attachment, GradeComponent, Lecture, ListParams, PaginatedResponse, Semester, Submission, User } from '../types';
-import type { AttendanceStatus, GradeStatus } from '../../config/constants';
-import type { AnnouncementView, AssignmentView, AttendanceBook, CourseDetail, CourseView, GradeBook, ResultCourse, ResultsResponse, SubmissionView } from '../types/academic';
+import type { GradeStatus } from '../../config/constants';
+import type { AnnouncementView, AssignmentView, AttendanceBook, AttendanceHistoryRow, CourseDetail, CourseView, CourseWeeksResponse, GradeBook, ResultCourse, ResultsResponse, StudentGradeItem, SubmissionView } from '../types/academic';
 import type { TimetableItem } from '../../components/shared/week-timetable';
 const get = async <T>(url: string, params?: ListParams) => (await api.get<ApiResponse<T>>(url, { params })).data.data;
 const send = async <T>(method: 'post' | 'put' | 'patch', url: string, data: unknown) => (await api[method]<ApiResponse<T>>(url, data)).data.data;
 export const academicApi = {
   courses: async (params: ListParams, signal: AbortSignal) => (await api.get<PaginatedResponse<CourseView>>('/courses', { params, signal })).data,
   course: (id: number) => get<CourseDetail>(`/courses/${id}`),
-  breakdown: (id: number, params: ListParams, signal: AbortSignal) => api.get<PaginatedResponse<GradeComponent & { score: number | null; feedback: string | null }>>(`/courses/${id}/grade-breakdown`, { params, signal }).then(response => response.data),
-  history: (id: number, params: ListParams, signal: AbortSignal) => api.get<PaginatedResponse<{ id: number; date: string; status: AttendanceStatus }>>(`/courses/${id}/attendance-history`, { params, signal }).then(response => response.data),
+  weeks: (id: number) => get<CourseWeeksResponse>(`/courses/${id}/weeks`),
+  breakdown: (id: number, params: ListParams, signal: AbortSignal) => api.get<PaginatedResponse<StudentGradeItem>>(`/courses/${id}/grade-breakdown`, { params, signal }).then(response => response.data),
+  history: (id: number, params: ListParams, signal: AbortSignal) => api.get<PaginatedResponse<AttendanceHistoryRow>>(`/courses/${id}/attendance-history`, { params, signal }).then(response => response.data),
   catalog: () => get<{ semesters: Semester[] }>('/catalog'),
   roster: (id: number, params: ListParams, signal: AbortSignal) => api.get<PaginatedResponse<User>>(`/courses/${id}/roster`, { params, signal }).then(response => response.data),
   attendance: (id: number) => get<AttendanceBook>(`/courses/${id}/attendance`),

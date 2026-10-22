@@ -23,7 +23,7 @@ export interface Attachment { id: number; name: string; url: string; size: numbe
 export interface Lecture { id: number; offering_id: number; week_number: number; title: string; description: string; attachments: Attachment[]; updated_at: string }
 export interface Assignment { id: number; offering_id: number; week_number: number; submission_enabled: boolean; title: string; description: string; due_at: string; attachments: Attachment[] }
 export interface Submission { id: number; assignment_id: number; student_id: number; files: Attachment[]; submitted_at: string; score: number | null; feedback: string | null }
-export interface Announcement { id: number; title: string; body: string; audience: 'all' | 'role' | 'offering'; role: Role | null; offering_id: number | null; author_id: number; created_at: string }
+export interface Announcement { id: number; title: string; body: string; audience: 'all' | 'role' | 'offering'; role: Role | null; offering_id: number | null; week_number: number | null; author_id: number; created_at: string }
 export interface AcademicSettings { pass_mark: number; letter_scale: LetterRange[]; attendance_counted_statuses: AttendanceStatus[]; attendance_warning_threshold: number; weekend_days: number[] }
 export interface ApiResponse<T> { data: T }
 export interface PaginationMeta { current_page: number; per_page: number; total: number; last_page: number }
