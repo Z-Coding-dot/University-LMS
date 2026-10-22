@@ -8,7 +8,7 @@ React 18 + TypeScript (strict) + Vite, Tailwind CSS, React Router (data router),
 ## 2. Design (same as Epart, adapted to an app)
 - Tokens: #FF6B00, #FFB202, #111827, #F3F4F6, #FFFFFF as Tailwind/CSS variables. Dark sidebar (#111827) with orange active state, light content area, rounded-2xl cards, soft shadows, subtle gradients, glass accents, consistent Lucide icons, strong type scale.
 - Login: follow the supplied reference: orange gradient panel with fine circular outlines, white curved base and a seated student reading; clean white email/password form beside it. No Google sign-in or signup. Forgot-password guidance directs users to the administrator. Mobile: single column. Preserve bilingual RTL support.
-- Dashboard overview: show role-specific metrics, quick links, and compact previews (up to three each) of actionable deadlines, today's classes and announcements. Full courses, grades, assignments, learning files and attendance charts belong to their related sections. Sidebar collapse/expand sits beside the logo at the top in both sizes; hide its visible scrollbar while retaining keyboard/wheel scrolling. Keep the orange brand, dark sidebar, Recharts on Performance, skeleton loaders and empty states. Links must open real sections/details; data must respect enrollment, teacher assignment and grade visibility. Mobile panels stack and shared tables become cards.
+- Dashboard overview: show role-specific metrics, quick links, and compact previews (up to three each) of actionable deadlines, today's classes and announcements. Full content belongs to its related course or staff section. Expanded sidebar collapse sits beside the logo; when collapsed, expand moves under the logo and appears on hover or keyboard focus (always visible on touch devices). Hide its visible scrollbar while retaining keyboard/wheel scrolling. Account identity, role and sign-out belong in the topbar profile menu, not the sidebar/drawer footer. Student navigation omits Assignments, Learning files, Performance and Announcements; assignments/files live inside courses and general announcements remain on Overview. Keep staff management navigation, the orange brand, dark sidebar, skeleton loaders and empty states. Links must open real sections/details; data must respect enrollment, teacher assignment and grade visibility. Mobile panels stack and shared tables become cards.
 - Motion: page transitions, staggered list reveal, hover lift, animated count-up on stat numbers. Directions must respect RTL (multiply x-offsets by dir). Respect `prefers-reduced-motion`. Keep it tasteful; no heavy WebGL.
 - No dark mode (out of scope).
 
@@ -26,17 +26,18 @@ Rules (put in /src/lib/grading.ts as pure functions + unit tests):
 - Attendance % = (present + late + excused) / total sessions (configurable which statuses count); warning threshold configurable.
 - Grade lifecycle: draft → published (visible to student) → locked (only admin can unlock). Students never see draft grades.
 - The server will be authoritative for all calculations; the client computes only for display/preview.
+- Results display each course's configured assessments (Midterm, Endterm, Final, FX and custom components), individual assignment scores/feedback and weighted total. Unconfigured assessments are labeled accordingly; unpublished scores stay hidden. Assignment marks do not automatically change configured component weights.
 
 ## 5. Roles & permissions
 - Admin: creates users (students/teachers), assigns teachers to offerings, enrolls students, and grants/revokes teacher PERMISSIONS.
-- Permission strings (constants in /src/lib/permissions.ts): `attendance.take`, `grades.enter`, `grades.publish`, `assignments.manage`, `announcements.post`, `timetable.view`. Admin has everything implicitly; `grades.unlock` is admin-only.
+- Permission strings (constants in /src/lib/permissions.ts): `attendance.take`, `grades.enter`, `grades.publish`, `assignments.manage`, `materials.manage`, `announcements.post`, `timetable.view`. Admin has everything implicitly; `grades.unlock` is admin-only.
 - User object from API: `{ id, name, email, role, permissions: string[], locale, must_change_password }`.
 - Implement `useCan(permission)`, `<Can>`, role route guards, and a single permission-aware nav config. 403 → friendly page. First login with `must_change_password` forces the change-password screen for administrators only. Students and teachers use university-issued credentials directly and never enter a self-service password-change flow, including when a legacy flag is present.
 - Auth: login with university-issued email + password; no Google login, self-registration or email-based reset. Only administrators create student/teacher accounts and change their name/email/password. Generate a unique password per new account/reset, reveal credentials once to the administrator for direct handover, and never expose passwords in lists. Students and teachers may change their language preference only; their name/email/password profile inputs are disabled. Enforce restrictions in UI/routes and API. API client supports Sanctum cookie mode (`withCredentials`, CSRF cookie) behind a single switch in /src/api/client.ts.
 
 ## 6. Screens
 Admin: dashboard (counts, attendance overview, recent activity) · users (students, teachers: list/create/edit/deactivate/reset password) · teacher permissions (per-teacher toggles + quick presets) · academic structure (faculties, departments, academic years, semesters, courses) · offerings (create, assign teacher, enroll students, schedule slots) · timetable overview · grading & attendance settings (pass mark, letter scale, attendance rule/threshold, weekend days) · announcements · unlock grades · profile.
-Teacher: dashboard (today's classes, pending attendance/grades, recent submissions) · my classes → class detail tabs: Students / Attendance / Grades / Assignments / Announcements · attendance taking (date picker, mark-all-present, per-student status, summary) · grade entry per component (validates ≤ max, feedback per entry, save draft, publish) · assignments (create, view submissions, score + feedback) · timetable · profile. Actions hidden/disabled per permission.
+Teacher: dashboard (today's classes, pending attendance/grades, recent submissions) · my classes → class detail tabs: Weekly learning / Students / Attendance / Grades / Assignments · attendance taking (date picker, mark-all-present, per-student status, summary) · grade entry per component (validates ≤ max, feedback per entry, save draft, publish) · assignments (create, view submissions, score + feedback) · timetable · profile. Actions hidden/disabled per permission.
 Student: dashboard (semester average, attendance %, upcoming assignments, latest announcements) · my courses (current semester) → course detail: grade breakdown per component + feedback, attendance history, assignments (submit files), announcements · results by semester (course totals, letter, semester average, cumulative average, chart) · timetable (week view) · announcements · profile.
 Shared: announcements list/detail, timetable view, profile (student/teacher name/email/password disabled and administrator-managed; language editable; name/password self-service for administrators only).
 
@@ -44,11 +45,13 @@ Shared: announcements list/detail, timetable view, profile (student/teacher name
 ### Semester subjects and weekly teaching content
 - The student Courses navigation expands into the subjects assigned by the university for the student's current semester. This is enrollment-driven, not a fixed list or subject count (e.g. seven assigned subjects means seven entries). Display subject name/code and its assigned teacher/instructor. Support the same course selection on mobile, and refresh it after enrollment changes.
 - Each course offering has 16 numbered weeks. Course detail opens a weekly learning area with accessible week selection. Every week may have multiple lectures/materials and assignments; show useful empty states for unpublished/empty weeks.
+- Include an All weeks option with all 16 week headings and content counts; open/highlight the current week and show its materials by default. Calculate current week from the semester start in university time, bounded to 1–16 and absent outside the semester. Expand other weeks to view their lectures, downloadable files, assignments, submission status, score and feedback.
+- Course announcements/instructions are inside Weekly learning rather than a separate course tab. Teachers can target a numbered week or post a course-wide notice. Student Grades also lists all course assignments and their individual marks.
 - Assigned teachers with `materials.manage` can create/edit weekly lectures with text and/or downloadable files. Assigned teachers with `assignments.manage` can create/edit an assignment in a chosen week (e.g. Week 4), provide text instructions and/or instruction attachments, set a deadline, and explicitly enable/disable student submissions.
 - Assignment detail shows the instructions and instruction files ABOVE the student's completed-work upload area. Students can upload/replace their own completed files only when submissions are enabled, before the deadline and before grading. Display submitted status, files, score and feedback; staff can review submissions separately. Disabled/closed/graded assignments remain readable with a clear reason why uploading is unavailable.
 - Enforce week range 1–16, offering ownership, enrollment, file limits and submission status in the mock API and future Laravel backend, not only the UI. Record weekly lecture, assignment and submission fields/endpoints in the API contract.
 
-- Style mobile-first; must work from 360px up. Body text ≥16px, fa line-height ~1.8. Touch targets ≥44px, no hover-only actions, safe-area padding.
+- Style mobile-first; must work from 360px up. Use the user's requested compact typography across mobile/desktop: 12px base text and small shared heading/metric sizes; fa line-height ~1.8. Keep the root layout scale and touch targets ≥44px. No hover-only actions; safe-area padding. Search icons stay vertically centered and semester controls wrap/truncate within their container.
 - Navigation: desktop = collapsible sidebar; mobile student/teacher = bottom tab bar (4–5 items + "More" sheet); mobile admin = drawer.
 - ONE reusable `DataTable` component for ALL tables: desktop renders a real table; below `md` each row becomes a CARD. Column config has `mobile: "primary" | "secondary" | "hidden"` — cards show only primary fields plus a "Show more / بیشتر" toggle revealing secondary fields and row actions. Lists on mobile show the first 10 items with a "Load more / نمایش بیشتر" button — never dump all rows. Supports server-side pagination, sorting, search, filters, loading skeleton, empty state, optional row selection.
 - Grade entry on mobile: per-student cards with collapsible component inputs (not a spreadsheet grid), sticky save/publish bar. Desktop: editable grid.
@@ -60,7 +63,7 @@ Before creating ANY component, search /components and reuse or extend via props/
 
 Folder structure (follow exactly):
 ```
-lms-frontend/
+frontend/
 ├── public/{fonts,icons,images/logo}/
 ├── docs/API_CONTRACT.md
 ├── src/
@@ -105,3 +108,16 @@ lms-frontend/
 1. Student area. 2. Teacher area. 3. Admin area. (Proceed through these without waiting, unless blocked.)
 4. Finish: complete `docs/API_CONTRACT.md`, README (setup, env, mock mode, how to add a module), `.env.example`, final tsc/eslint/build pass.
 Ask me only if blocked; otherwise decide and flag the decision in your phase report.
+
+## 12. Frontend review status — 22 October 2026
+
+Phases 0–4 are implemented and verified against the mock API. The final review
+and requirement checklist are recorded in
+[`frontend/docs/FRONTEND_PROGRESS.md`](../frontend/docs/FRONTEND_PROGRESS.md).
+This includes the enrollment-driven subjects, 16-week learning area, managed
+student/teacher credentials, compact dashboards and staff activity lists.
+Verification follows §10; browser/device behavior and real backend integration
+are not verified. Backend work waits for the user's separate specification.
+
+
+<!-- on mobile right now we have sidebar and buttom bar so remove the sidebar only buttom bar is okay, and the buttom bar is when click to some tabs and buttom bar will hide and never dispaly again so fix this as well  -->

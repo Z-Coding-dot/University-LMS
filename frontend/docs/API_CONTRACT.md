@@ -2,7 +2,8 @@
 
 Implemented frontend calls are listed below. Role-specific dashboards,
 administrator-managed student/teacher accounts and the connected student/teacher
-academic screens use this contract. Remaining admin academic CRUD is not implemented.
+academic screens use this contract, including weekly course content and admin
+structure, offerings, enrollment, schedules, settings and grade unlocking.
 Do not infer implemented endpoints from the fixture inventory.
 
 ## Transport and authentication
@@ -43,12 +44,13 @@ Do not infer implemented endpoints from the fixture inventory.
 | PATCH | `/profile` | Students/teachers: locale only. Admins: optional name and locale, after required password change | `{ locale, name?: string }` | Updated `User` |
 | PUT | `/profile/password` | Admins only, including forced password change; students/teachers receive 403 | `{ current_password, password, password_confirmation }` | Updated `User` with `must_change_password: false` |
 | GET | `/profile/context` | Any authenticated account after password change | — | `{ department: Department \| null, semester: Semester \| null }` for current user |
-| GET | `/settings` | Any authenticated account after password change | — | `AcademicSettings` (read-only foundational client; no screen yet) |
+| GET | `/settings` | Any authenticated account after password change | — | `AcademicSettings` |
 | GET | `/admin/students` | Admin only | Query: page, per_page, search, sort | Paginated `User[]`, student role only |
 | POST | `/admin/students` | Admin only | `{ name, email, locale }` | `{ user: User, initial_password: string }` (201) |
 | PATCH | `/admin/students/{id}` | Admin only, target must be a student | `{ name, email }` | Updated `User` |
 | POST | `/admin/students/{id}/reset-password` | Admin only, target must be a student | — | `{ user: User, initial_password: string }` |
 | PATCH | `/admin/students/{id}/status` | Admin only, target must be a student | `{ status: active/inactive }` | Updated `User` |
+| PATCH | `/admin/students/{id}/academic-profile` | Admin only, target must be a student | `{ department_id: number/null, current_semester_id: number/null }` | Updated `User`; enrollment unchanged |
 | GET | `/admin/teachers` | Admin only | Query: page, per_page, search, sort | Paginated `User[]`, teacher role only |
 | POST | `/admin/teachers` | Admin only | `{ name, email, locale }` | `{ user: User, initial_password: string }` (201) |
 | PATCH | `/admin/teachers/{id}` | Admin only, target must be a teacher | `{ name, email }` | Updated `User` |
@@ -58,6 +60,9 @@ Do not infer implemented endpoints from the fixture inventory.
 | GET | `/dashboard` | Any authenticated account, scoped by role and ownership | Query: offering_id?, search? | `DashboardSummary` (below) |
 | GET | `/dashboard/tasks` | Same scope as dashboard | Query: offering_id?, search?, attention_only?, page, per_page, sort | Paginated `DashboardTask[]` |
 | GET | `/dashboard/files` | Same scope as dashboard | Query: offering_id?, search?, page, per_page, sort | Paginated `DashboardFile[]` |
+| GET | `/dashboard/work` | Admin; teacher with attendance.take or grades.enter/publish, assigned offerings only | List params; offering_id? | Paginated `DashboardWork[]`, each task filtered by its permission |
+| GET | `/dashboard/submissions` | Admin; assigned teacher with assignments.manage | List params; offering_id? | Paginated `DashboardSubmission[]` |
+| GET | `/dashboard/grades` | Admin; assigned teacher with grades.enter or grades.publish | List params; offering_id? | Paginated `DashboardGrade[]`, published/locked only |
 
 ## Connected academic endpoints
 
@@ -72,8 +77,9 @@ Teacher permissions never grant access to another teacher's offerings.
 | GET | `/catalog` | Authenticated | None | `{ semesters, departments, faculties, academic_years, courses }` |
 | GET | `/courses` | Authenticated, scoped | List params; `semester_id?` defaults to student's assigned semester or staff current semester | Paginated `CourseView[]` |
 | GET | `/courses/{id}` | Scoped | None | `CourseDetail` |
+| GET | `/courses/{id}/weeks` | Enrolled student, assigned teacher or admin | None | `CourseWeeksResponse` below |
 | GET | `/courses/{id}/roster` | Assigned teacher/admin | List params | Paginated `User[]` for enrolled students |
-| GET | `/courses/{id}/attendance-history` | Enrolled student, own records | List params | Paginated `(AttendanceRecord & { date })[]` |
+| GET | `/courses/{id}/attendance-history` | Enrolled student, own history | List params | Paginated `AttendanceHistoryRow[]` |
 | GET | `/courses/{id}/grade-breakdown` | Enrolled student, own published scores | List params | Paginated `(GradeComponent & { score: number/null, feedback: string/null })[]` |
 | GET | `/courses/{id}/attendance` | Assigned teacher/admin | None | `{ students: User[], sessions: AttendanceSession[], records: AttendanceRecord[] }` |
 | POST | `/courses/{id}/attendance` | Admin or assigned teacher with `attendance.take` | `{ date, records: { student_id, status }[] }` | `AttendanceSession` |
@@ -84,15 +90,19 @@ Teacher permissions never grant access to another teacher's offerings.
 | GET | `/results` | Student, own enrollment across semesters | None | `{ semesters: { semester, courses: ResultCourse[], average: number/null }[], cumulative_average: number/null }` |
 | GET | `/results/courses` | Student, own results | List params; `semester_id` | Paginated `ResultCourse[]` |
 | GET | `/timetable` | Student/admin; teacher requires `timetable.view` | `semester_id?`, defaults as `/courses` | `{ slots: (TimetableSlot & { title, teacher? })[], weekend_days: number[] }` |
-| GET | `/assignments` | Authenticated, scoped | List params; `offering_id?` | Paginated `AssignmentView[]` |
+| GET | `/courses/{id}/lectures` | Enrolled student, assigned teacher or admin | List params; `week_number?` | Paginated `Lecture[]` |
+| POST | `/courses/{id}/lectures` | Admin or assigned teacher with `materials.manage` | `LectureInput` below | `Lecture` (201) |
+| PATCH | `/courses/{id}/lectures/{lectureId}` | Same as create; lecture must belong to offering | `LectureInput` | `Lecture` |
+| GET | `/assignments` | Authenticated, scoped | List params; `offering_id?`, `week_number?` | Paginated `AssignmentView[]` |
+| GET | `/assignments/{id}` | Enrolled student, assigned teacher or admin | None | `AssignmentView` |
 | POST | `/assignments` | Admin or assigned teacher with `assignments.manage` | `AssignmentInput` below | `Assignment` (201) |
 | PATCH | `/assignments/{id}` | Same as create; offering cannot change | `AssignmentInput` | `Assignment` |
-| POST | `/assignments/{id}/submissions` | Enrolled student; before deadline; ungraded | `{ file_ids: number[] }` | Own `Submission` (201); replaces existing ungraded submission |
+| POST | `/assignments/{id}/submissions` | Enrolled student; submission enabled; before deadline; ungraded | `{ file_ids: number[] }` | Own `Submission` (201); replaces existing ungraded submission |
 | GET | `/assignments/{id}/submissions` | Admin or assigned teacher with `assignments.manage` | List params | Paginated `(Submission & { student_name })[]` |
 | PATCH | `/submissions/{id}` | Admin or assigned teacher with `assignments.manage` | `{ score, feedback }` | `Submission` |
-| POST | `/uploads` | Student for submission; admin/assigned teacher with `assignments.manage` for assignment | Multipart: `offering_id`, `purpose: submission/assignment`, repeated `files` | `Attachment[]` (201) |
-| GET | `/announcements` | Authenticated, audience/ownership scoped | List params; `offering_id?` | Paginated `(Announcement & { author_name })[]` |
-| POST | `/announcements` | Admin or teacher with `announcements.post` | `{ title, body, audience, role?, offering_id? }` | `Announcement` (201) |
+| POST | `/uploads` | Student for submission; staff requires `assignments.manage` for instructions or `materials.manage` for lectures, plus offering access | Multipart: `offering_id`, `purpose: submission/assignment/lecture`, repeated `files` | `Attachment[]` (201) |
+| GET | `/announcements` | Authenticated, audience/ownership scoped | List params; `offering_id?`, `week_number?`, `course_wide?: 0/1` | Paginated `(Announcement & { author_name })[]` |
+| POST | `/announcements` | Admin or teacher with `announcements.post` | `{ title, body, audience, role?, offering_id?, week_number?: number/null }` | `Announcement` (201) |
 | PATCH | `/announcements/{id}` | Admin or original teacher author with permission and offering access | Same as create | `Announcement` |
 
 ### Academic DTOs and validation
@@ -105,18 +115,51 @@ Canonical definitions are in `src/api/types/academic.ts` and `src/api/types/inde
   `attendance_records`, `attendance_percent: number/null`, `settings`.
   Student scores/feedback/attendance records are their own; draft grades are
   omitted. Grade breakdown returns null score/feedback for unpublished components.
+- `AttendanceHistoryRow`: `{ id: session ID, date, status: AttendanceStatus/null }`.
+  Include every offering session, using null when the student has no record yet.
+  The UI labels these sessions unmarked; it never invents an absent record.
 - `ResultCourse`: `{ id: offering ID, code, name: LocalizedName, credits,
-  total: number/null, letter: string/null, status }`. Totals/averages exclude
+  total: number/null, letter: string/null, status, assessments, assignments }`. Totals/averages exclude
   incomplete or unpublished results; cumulative averages are credit-weighted.
+  `assessments` contains every configured GradeComponent plus `score: number/null`
+  and `feedback: string/null`, scoped to the current student. Draft course or entry
+  status hides both score and feedback. `assignments` contains every course task:
+  `{ id: assignment ID, title, week_number, submitted: boolean, score: number/null,
+  feedback: string/null }`, using only the current student's submission.
+  Assignment scores are out of 100 and become visible after the teacher grades
+  them. They do not automatically alter component weights or course totals.
+  The results screen groups configured components named Midterm, Endterm, Final
+  (including Final exam) and FX, also displays custom components, and labels
+  missing categories unconfigured. The server never invents missing scores.
+- `CourseWeeksResponse`: `{ current_week: number/null, course_announcement_count,
+  weeks: { week_number, lecture_count, assignment_count, announcement_count }[] }`.
+  Exactly 16 summaries, ordered 1–16. Counts include this offering only, with
+  announcements following the same audience checks as list reads. Current week
+  starts at 1 on the semester start date in Asia/Kabul, advances every seven days,
+  is capped at 16, and is null outside the semester. Course-wide notices have a
+  null week. The UI initially opens the current week's materials; All weeks shows
+  every heading/count with the current week expanded and highlighted. Other week
+  content loads when expanded, using the existing paginated resource endpoints.
 - `AssignmentView` extends Assignment with `course_name: LocalizedName`,
   `submission: Submission/null` (current student only; staff receive null), and
-  `submission_count`. `AssignmentInput` is `{ offering_id, title, description,
-  due_date: YYYY-MM-DD, attachment_ids: number[] }`. `due_date` becomes 23:59:59
+  `submission_count`. `AssignmentInput` is `{ offering_id, week_number,
+  submission_enabled: boolean, title, description, due_date: YYYY-MM-DD,
+  attachment_ids: number[] }`. `due_date` becomes 23:59:59
   Asia/Kabul on the server and is returned as ISO `due_at`.
+- `LectureInput`: `{ offering_id, week_number, title, description,
+  attachment_ids: number[] }`. `Lecture` returns the corresponding fields with
+  numeric `id`, resolved `attachments` and ISO `updated_at`. Reads localize seeded
+  text; user-authored content is returned as entered.
+- Week numbers are integers 1–16; invalid week filters or mutations return 422.
+  The student subject submenu uses `/courses` with the default current-semester
+  scope and 10-row pagination. Subject counts come from enrollment; there is no
+  fixed subject count. Direct course, lecture and assignment access repeats
+  enrollment/assigned-teacher checks even if navigation is bypassed.
 - Sort/search columns: courses `name, code, credits, teacher`; roster
   `name, email, institutional_id`; history `date, status`; breakdown
   `name, weight, score`; results `name, code, credits, total`; assignments
-  `title, due_at, course`; submissions `student_name, submitted_at, score`;
+  `title, due_at, week_number, course`; lectures `title, week_number, updated_at`;
+  submissions `student_name, submitted_at, score`;
   announcements `title, created_at, author_name`. Unknown sort fields return 422.
 - Attendance requires non-empty records, unique enrolled student IDs, a valid
   Gregorian date no later than today in Kabul, and a configured attendance status.
@@ -129,11 +172,22 @@ Canonical definitions are in `src/api/types/academic.ts` and `src/api/types/inde
   maximum score > 0, weights 0–100 totaling 100%. IDs must belong to the offering.
   Omitted components and their entries are removed; published components cannot
   be changed. Save returns the entire component list.
-- Assignment title is required, max 200 characters; description required, max
-  10,000. Creation/edit due dates cannot precede today in Kabul. Submissions use
+  Supplied component IDs must be unique. Reject a reduced maximum below any
+  retained score. New IDs must not reuse a component removed by the same request;
+  deleting a component must never transfer its scores to a newly created one.
+- Assignment/lecture title is required, max 200 characters; description is trimmed,
+  max 10,000, and may be empty only if at least one instruction/material attachment
+  is supplied. There are at most 5 attachment IDs. Lecture offering IDs must match
+  the path; assignment offering IDs cannot change on edit. Existing authorized
+  attachments may be retained; new file IDs must match uploader, offering and purpose.
+  Creation/edit assignment due dates cannot precede today in Kabul. Submissions use
   1–5 file IDs belonging to the student's upload/course/purpose or their existing
   submission. Graded submissions cannot be replaced; grades are 0–100 with feedback
-  max 2,000 characters. The server repeats upload ownership/type/size validation.
+  max 2,000 characters. Disabled submissions return 422; expired deadlines return
+  422; already graded submissions return 403, including a score of zero. Instruction
+  files/text remain readable when uploading is unavailable. The UI presents these
+  instructions above completed-work uploads on `/assignments/{id}`.
+  The server repeats upload ownership/type/size validation.
 - Upload limits: 5 files, each non-empty and <=5 MiB; PDF, DOC/DOCX, PPT/PPTX,
   XLS/XLSX, JPG/JPEG, PNG, ZIP. The frontend reports progress and validates before
   upload. Real servers must verify file content, authorize downloads and persist
@@ -143,6 +197,15 @@ Canonical definitions are in `src/api/types/academic.ts` and `src/api/types/inde
   Teachers can post only to their assigned offerings and edit only their own
   posts. Admins may target all, role or offering audiences. List visibility follows
   the same audience rules as dashboard announcements.
+  `week_number` is null for course-wide/general notices or an integer 1–16 for a
+  weekly notice. A non-null week requires `audience: offering` and an authorized
+  offering ID. Omitted week defaults to null; the UI's All/course-wide value is
+  normalized to null before storage. Invalid weeks return 422.
+  An `offering_id` list filter returns that course's notices only, excluding global
+  announcements. `week_number` restricts to that week; `course_wide=1` restricts
+  to null-week notices and cannot be combined with a numbered week. Both filters
+  apply before search/sort/pagination. The course has no separate announcement
+  tab: notices/instructions appear inside Weekly learning, above the materials.
 
 Account and dashboard lists accept pagination/search/sort. Their `page` is an integer >=1,
 `per_page` an integer 1–100. For `/admin/students` and `/admin/teachers`, `sort`
@@ -178,7 +241,7 @@ There is no registration or email recovery endpoint; an admin resets passwords.
   preserves academic records and blocks login and later authenticated requests;
   real backend implementations must invalidate the account's active sessions.
 - Teacher permission payloads are strict, replace the complete grant list, and
-  allow only the six teacher permissions from the shared academic rules. Reject
+  allow only the seven teacher permissions from the shared academic rules. Reject
   duplicates, unknown grants and `grades.unlock` with 422. Target role/ID must match
   the teachers resource; return 404 otherwise. Admin-only checks happen before
   validation/target lookup. New teachers have no grants. Presets are client-side
@@ -197,6 +260,77 @@ There is no registration or email recovery endpoint; an admin resets passwords.
 - Admin first login: only me, logout and password change are allowed until
   the flag is cleared. Students and teachers never enter this self-service flow;
   the university gives them their email and unique password, ready to use for login.
+
+## Admin academic endpoints
+
+All endpoints in this section require an administrator and completed admin password
+change. Check authorization before looking up records or validating payloads.
+Unknown resources/IDs return 404. Mutations validate the full request before writing;
+the Laravel implementation must use transactions for enrollment and scheduling.
+
+| Method | Path (under `/api/v1`) | Request/query | Response `data` |
+|---|---|---|---|
+| GET | `/admin/catalog` | None | `AcademicCatalog`: faculties, departments, academic_years, semesters, courses, teachers, students, offerings |
+| GET | `/admin/structure/{resource}` | List params | Paginated `StructureRow[]` |
+| POST | `/admin/structure/{resource}` | Resource fields below | Created structure row (201) |
+| PATCH | `/admin/structure/{resource}/{id}` | Resource fields below, full editable fields | Updated structure row |
+| GET | `/admin/offerings` | List params; `semester_id?` | Paginated `CourseView[]` |
+| POST | `/admin/offerings` | `{ course_id, semester_id, teacher_id, capacity }` | `CourseView` (201), empty schedule and draft grade state |
+| PATCH | `/admin/offerings/{id}` | Same fields; course/semester must remain unchanged | `CourseView` |
+| GET | `/admin/offerings/{id}/candidates` | List params | Paginated active student `User[]` not already enrolled |
+| POST | `/admin/offerings/{id}/enrollments` | `{ student_ids: number[], make_current: boolean }` | Updated `CourseView` |
+| PUT | `/admin/offerings/{id}/schedule` | `{ slots: { weekday, start, end, room }[] }` | Updated `CourseView` with assigned slot IDs |
+| PUT | `/admin/settings` | Full `AcademicSettings` object | Updated `AcademicSettings` |
+| GET | `/admin/locked-grades` | List params; `semester_id?` | Paginated `CourseView[]` in locked grade state |
+
+Grade unlocking uses the existing `PUT /courses/{id}/grade-status` with
+`{ status: "published" }`. Only admins can transition locked to published; all
+component entries change status together. Published student results stay visible.
+
+`resource` is one of the following; payloads are strict and omit the server ID:
+
+| Resource | Editable fields |
+|---|---|
+| `faculties` | `{ name: LocalizedName }` |
+| `departments` | `{ name: LocalizedName, faculty_id }` |
+| `academic-years` | `{ name: string, starts_at, ends_at }` |
+| `semesters` | `{ name: LocalizedName, academic_year_id, starts_at, ends_at }` |
+| `courses` | `{ name: LocalizedName, department_id, code, credits }` |
+
+- Names are non-empty and at most 150 characters per locale; codes are non-empty,
+  max 30 and unique ignoring case. Credits are integers 1–30. Parent records must
+  exist. Date fields are Gregorian date-only ISO; end >= start. Semesters must fit
+  within their academic year; an edited year cannot exclude existing semesters.
+- Structure lists sort/search by localized name and ID. Offering/locked-grade lists
+  sort/search by localized subject name, instructor, capacity and enrolled student
+  count. Candidate lists sort/search by name, email and institutional ID.
+- Offering teachers must be active teacher accounts; capacity is an integer
+  1–1,000 and cannot drop below the current roster. Existing subject/semester IDs
+  are immutable. Changing instructor must not create a same-semester teaching
+  timetable conflict. New offerings do not automatically enroll students.
+- Enrollment accepts 1–100 unique active student IDs. It adds students and does not
+  remove existing enrollment/history; already-enrolled IDs are idempotent. Validate
+  the entire batch against capacity and overlapping schedules before adding any.
+  With `make_current: true`, set the offering's semester as each selected student's
+  current semester; fill a missing home department from the subject's department.
+  With false, preserve their academic placement. Enrollment/current semester
+  determine the student Courses submenu, which refreshes through query invalidation.
+- `/admin/students/{id}/academic-profile` separately changes nullable home department
+  and current semester. Non-null IDs must exist. It never adds/removes enrollment;
+  changing semester alone cannot grant access to a subject.
+- Schedules replace the offering's complete slot list, 0–30 entries. Weekday is an
+  ISO integer 1–7, times use `HH:mm`, end > start, and room is required, max 100
+  characters. Reject overlapping slots within the offering, and overlapping
+  same-semester slots for its instructor, room (case-insensitive) or enrolled
+  students. Adjacent times are allowed. Student enrollment also checks timetable
+  overlap against their existing offerings.
+- Settings require pass mark and attendance threshold in [0,100], 1–20 letter ranges
+  with non-empty letters (max 10 characters) covering [0,100] without gaps/overlaps,
+  at least one unique valid counted attendance status, and 0–7 unique ISO weekend
+  days. The server is authoritative for all calculations after settings change.
+- No academic structure deletion or enrollment removal endpoint is implemented;
+  account deactivation preserves history. Real backend file/session persistence is
+  still required; mock changes reset on reload.
 
 ## Entity inventory
 
@@ -218,10 +352,11 @@ Canonical TypeScript definitions: `src/api/types/index.ts`. `LocalizedName` is
 | GradeEntry | id, student_id, component_id, score, feedback: string/null, status: draft/published/locked, updated_at: timestamp |
 | AttendanceSession | id, offering_id, date |
 | AttendanceRecord | id, session_id, student_id, status: present/absent/late/excused |
-| Assignment | id, offering_id, title, description, due_at: timestamp, attachments: Attachment[] |
+| Lecture | id, offering_id, week_number: integer 1–16, title, description, attachments: Attachment[], updated_at: timestamp |
+| Assignment | id, offering_id, week_number: integer 1–16, submission_enabled: boolean, title, description, due_at: timestamp, attachments: Attachment[] |
 | Attachment | id, name, url, size: bytes, mime_type, created_at: timestamp |
 | Submission | id, assignment_id, student_id, files: Attachment[], submitted_at: timestamp, score: number/null, feedback: string/null |
-| Announcement | id, title, body, audience: all/role/offering, role: Role/null, offering_id: number/null, author_id, created_at: timestamp |
+| Announcement | id, title, body, audience: all/role/offering, role: Role/null, offering_id: number/null, week_number: integer 1–16/null, author_id, created_at: timestamp |
 | AcademicSettings | pass_mark, letter_scale: { min, max, letter }[], attendance_counted_statuses: AttendanceStatus[], attendance_warning_threshold, weekend_days: ISO weekday[] |
 
 ## Dashboard response and visibility
@@ -240,10 +375,32 @@ university timezone (Asia/Kabul); timetable HH:mm values are university local ti
   teacher: name }[]`, ordered by start time for `as_of`.
 - `latest_grades: { id, offering_id, student_name, course: LocalizedName,
   component: LocalizedName, score, max_score, feedback, status, updated_at }[]`,
-  newest first, at most 5. Only published/locked scores are included for every role.
+  newest first, at most 3. Only published/locked scores are included for every role.
+- `pending_work: DashboardWork[]` and `recent_submissions: DashboardSubmission[]`,
+  at most three each, permission-filtered and empty for students.
 - `announcements: (Announcement & { author_name })[]`, newest first, at most 10.
 - `attendance_series: { label: localized date, attendance: percentage }[]`, up to
   6 recorded class days. Dates must be formatted consistently with the display locale.
+
+`DashboardGrade` has the fields shown in `latest_grades`. The full paginated feed
+sorts/searches `course, student_name, updated_at, score`; default `-updated_at`.
+
+`DashboardWork`: `{ kind: attendance/grades, offering_id, course: LocalizedName,
+date: YYYY-MM-DD/null, pending: number }`. Attendance tasks count unrecorded roster
+members for existing sessions through today, plus today's scheduled offerings with
+no session yet. Grade tasks include draft gradebooks and count missing component
+scores; zero missing scores still needs review/publication. A draft without
+components needs component setup first. No task ID is a database entity: the UI
+keys rows by `(kind, offering_id, date)`. Sort/search fields are `course, kind, date,
+pending`; default `-date`. Links open the correct course tab and attendance date.
+
+`DashboardSubmission`: `{ id: submission ID, assignment_id, title, course:
+LocalizedName, student_name, submitted_at, score: number/null }`. Sort/search fields
+are `title, course, student_name, submitted_at, score`; default `-submitted_at`.
+No files or account credentials appear in this feed; assignment review rechecks
+ownership and permission. All three staff feeds use the authorized current semester
+scope, support the standard list params plus `offering_id`, and reject students
+with 403. Search applies to the named columns before pagination.
 
 `DashboardTask`: id, offering_id, localized title/description, course: LocalizedName,
 due_at, submission_rate (0–100), status, score: number/null, feedback: string/null.
@@ -254,10 +411,11 @@ dashboard task responses leave these null. Submission rate is the received count
 divided by enrolled students. Task sort fields: title, due_at, course, status,
 submission_rate; default due_at ascending.
 
-`DashboardFile`: Attachment plus offering_id, course: LocalizedName, uploaded_at
+`DashboardFile`: Attachment from lecture or assignment instruction files, plus offering_id, course: LocalizedName, uploaded_at
 (equal to attachment created_at). Sort fields: name, course, uploaded_at; default
 uploaded_at descending. Authenticated file downloads must repeat ownership checks
-on the real backend. Public `/files/*.zip` URLs are demo study packs only.
+on the real backend. Deduplicate by `(offering_id, attachment id)`; the UI uses that
+pair as its row key. Public `/files/*.zip` URLs are demo study packs only.
 
 Both list endpoints accept 1-based page, per_page (1–100), comma-separated sort
 fields with `-` descending prefixes, search (max 200 characters), and optional
@@ -271,14 +429,20 @@ due date and independently shows at most three classes and three announcements.
 Overview and notification summaries ignore page-local search/course filters.
 Full files live at `/resources`; attendance rings/charts live at `/performance`;
 full grades, assignments and schedules remain in their dedicated academic routes.
+Staff overview adds three-item work/submission previews; admins also see three
+recent published scores. Full staff feeds live at `/activity` using shared tables.
 
 - Students receive only offerings enrolled in their assigned current semester;
   no semester/enrollment yields empty panels, null averages and zero course counts.
   Teachers receive only assigned offerings in the current academic semester.
   Admins receive all offerings in that semester. An offering_id outside that scope
   returns 403 on every dashboard endpoint.
-- Course rings represent recorded attendance, not estimated syllabus completion.
-  Counted statuses come from settings; no recorded attendance yields null.
+- Course rings represent attendance across all offering sessions, including
+  sessions without a student's record. Counted statuses come from settings; no
+  sessions yields null, while existing unrecorded sessions contribute zero to the
+  numerator. For staff aggregates, denominator = session count times enrolled
+  student count for each offering. Student course details display a warning below
+  the configured attendance threshold. Future sessions are not counted.
 - Student course averages require every grade component to be published/locked.
   An incomplete/draft component yields no course total, never a partial or zero
   failing score. Dashboard average weights only completed published course totals
@@ -301,7 +465,7 @@ full grades, assignments and schedules remain in their dedicated academic routes
 - Single institution; no payments. Admin creates/deactivates users, resets
   passwords, manages academic structure/offerings/enrollment and teacher grants.
 - Permission strings: `attendance.take`, `grades.enter`, `grades.publish`,
-  `assignments.manage`, `announcements.post`, `timetable.view`. Teacher grants are
+  `assignments.manage`, `materials.manage`, `announcements.post`, `timetable.view`. Teacher grants are
   explicit; admins have all implicitly. `grades.unlock` is admin-only even if
   another role's permissions array mistakenly includes it. Student access uses
   enrollment ownership, never teacher permission grants.
@@ -333,13 +497,13 @@ full grades, assignments and schedules remain in their dedicated academic routes
 
 `VITE_USE_MOCK=true` replaces only the Axios adapter, preserving endpoint calls and
 response shapes. Default is mock when unset. All mutations validate and use current
-session identity; unsupported routes return 404. Student-account management exists;
-dashboard reads and the academic endpoints above exist. Admin teacher/academic
-structure/offerings/enrollment/settings management routes are still unimplemented;
-student and teacher accounts, statuses and teacher permission mutations above exist.
+session identity; unsupported routes return 404. Student/teacher accounts,
+dashboard reads, weekly teaching content and the admin academic endpoints in this
+contract are implemented. No Laravel server or persistent database is included.
 Fixtures contain 1 admin, 3 teachers, 25 students, 1 faculty/department/year,
 2 semesters, 6 courses/offerings, enrollment, mixed draft/published/locked grades,
-attendance, assignments, one submission, three announcements and six downloadable
+attendance, Week 4/5/8 lectures and assignments, graded and pending submissions,
+general/course/weekly announcements and six downloadable
 study-pack ZIP archives. Admin/teacher demo
 password is `Campus123!`. Students have distinct demo passwords (`Student001!Campus`
 for `student1@campus.test`, `Student024!Campus` for `student24@campus.test`, etc.).

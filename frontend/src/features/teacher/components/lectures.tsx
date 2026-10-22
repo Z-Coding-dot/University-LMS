@@ -24,7 +24,8 @@ export function Lectures({ offeringId, week }: { offeringId: number; week: numbe
   const [editor, setEditor] = useState<Lecture | 'new' | null>(null); const [selected, setSelected] = useState<Lecture | null>(null);
   const manage = can(user, PERMISSIONS.manageMaterials);
   const columns: DataColumn<Lecture>[] = [
-    { id: 'title', header: t('title'), accessor: row => row.title, mobile: 'primary', sortable: true },
+    { id: 'title', header: t('title'), accessor: row => row.title, mobile: 'primary', sortable: true, cell: row => <button type="button" className="min-h-11 text-start text-brand-action" onClick={() => setSelected(row)}>{row.title}</button> },
+    { id: 'attachments', header: t('attachments'), accessor: () => null, mobile: 'primary', cell: row => <div className="space-y-1">{row.attachments.map(file => <a key={file.id} href={file.url} download className="block min-h-11 break-all py-2 text-brand-action">{file.name}</a>)}</div> },
     { id: 'updated_at', header: t('date'), accessor: row => row.updated_at, mobile: 'secondary', sortable: true, cell: row => formatDate(row.updated_at, locale) },
   ];
   return <div className="space-y-4">{manage && <Button onClick={() => setEditor('new')}>{t('addLecture')}</Button>}<DataTable columns={columns} queryKey={['lectures', user?.id, offeringId, locale]} filterValues={{ week_number: week }} fetchPage={(params, signal) => academicApi.lectures(offeringId, params, signal)} getRowId={row => String(row.id)} label={t('lectures')} actions={row => <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => setSelected(row)}>{t('openLecture')}</Button>{manage && <Button variant="ghost" onClick={() => setEditor(row)}>{t('edit')}</Button>}</div>} />

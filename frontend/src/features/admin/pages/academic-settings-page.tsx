@@ -26,5 +26,5 @@ function SettingsEditor({ initial }: { initial: AcademicSettings }) {
 }
 export function AcademicSettingsPage() {
   const { t } = useTranslation('admin'); const query = useAcademicQuery(['admin-settings'], adminAcademicApi.settings);
-  return <><PageHeader title={t('settingsTitle')} description={t('settingsDescription')} /><QueryState pending={query.isPending} error={query.isError} retry={query.refetch}>{query.data && <SettingsEditor key={JSON.stringify(query.data)} initial={query.data} />}</QueryState></>;
+  return <><PageHeader title={t('settingsTitle')} description={t('settingsDescription')} /><QueryState pending={query.isPending} error={query.error} retry={query.refetch}>{query.data && <SettingsEditor key={JSON.stringify(query.data)} initial={query.data} />}</QueryState></>;
 }

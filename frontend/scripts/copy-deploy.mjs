@@ -10,5 +10,5 @@ if (exists) {
   await cp(new URL('../dist/', import.meta.url), target, { recursive: true });
   console.info(`Built frontend copied to ${fileURLToPath(target)}`);
 } else {
-  console.info('backend/public does not exist. Build is available in lms-frontend/dist.');
+  console.info('backend/public does not exist. Build is available in frontend/dist.');
 }

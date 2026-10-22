@@ -12,6 +12,9 @@ import { buildDashboard } from './dashboard';
 import { handleAcademic } from './academic';
 import { handleAccounts } from './accounts';
 import { handleAdminAcademic } from './admin-academic';
+import { page } from './http';
+import { can, PERMISSIONS } from '../../lib/permissions';
+import { canSeeDashboardGrades } from './dashboard';
 
 // Passwords stay private to the mock; only administrator issue/reset responses reveal them.
 const passwords = new Map(users.map(user => [user.id, initialDemoPassword(user)]));
@@ -86,11 +89,25 @@ export const mockAdapter: AxiosAdapter = async config => {
   if (adminResponse) return adminResponse;
   const academicResponse = handleAcademic(context);
   if (academicResponse) return academicResponse;
-  if (['/dashboard', '/dashboard/tasks', '/dashboard/files'].includes(path) && method === 'GET') {
+  if (['/dashboard', '/dashboard/tasks', '/dashboard/files', '/dashboard/work', '/dashboard/submissions', '/dashboard/grades'].includes(path) && method === 'GET') {
     const query = validate(dashboardQuerySchema, config.params ?? {}, config);
     const locale = config.headers.get('Accept-Language') === 'en' ? 'en' : 'fa';
-    const dashboard = buildDashboard(user, query, locale);
+    const staffList = ['/dashboard/work', '/dashboard/submissions', '/dashboard/grades'].includes(path);
+    const dashboard = buildDashboard(user, staffList ? { ...query, search: '' } : query, locale);
     if (dashboard.forbidden) return failure(config, 403, 'common:forbiddenTitle');
+    if (['/dashboard/work', '/dashboard/submissions', '/dashboard/grades'].includes(path) && user.role === 'student') return failure(config, 403, 'common:forbiddenTitle');
+    if (path === '/dashboard/work') {
+      if (!can(user, PERMISSIONS.takeAttendance) && !canSeeDashboardGrades(user)) return failure(config, 403, 'common:forbiddenTitle');
+      return page(context, dashboard.work, { course: row => row.course[locale], kind: row => row.kind, date: row => row.date, pending: row => row.pending }, '-date');
+    }
+    if (path === '/dashboard/submissions') {
+      if (!can(user, PERMISSIONS.manageAssignments)) return failure(config, 403, 'common:forbiddenTitle');
+      return page(context, dashboard.recentSubmissions, { title: row => row.title, course: row => row.course[locale], student_name: row => row.student_name, submitted_at: row => row.submitted_at, score: row => row.score }, '-submitted_at');
+    }
+    if (path === '/dashboard/grades') {
+      if (!canSeeDashboardGrades(user)) return failure(config, 403, 'common:forbiddenTitle');
+      return page(context, dashboard.latestGrades, { course: row => row.course[locale], student_name: row => row.student_name, updated_at: row => row.updated_at, score: row => row.score }, '-updated_at');
+    }
     if (path === '/dashboard') return respond(config, 200, { data: dashboard.summary });
     const isTasks = path === '/dashboard/tasks';
     const sort = query.sort || (isTasks ? 'due_at' : '-uploaded_at');

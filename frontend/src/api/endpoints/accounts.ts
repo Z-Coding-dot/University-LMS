@@ -16,3 +16,4 @@ export function accountsApi(role: ManagedRole) {
   };
 }
 export const saveTeacherPermissions = async ({ id, permissions }: { id: number; permissions: TeacherPermission[] }) => (await api.put<ApiResponse<User>>(`/admin/teachers/${id}/permissions`, { permissions })).data.data;
+export const saveStudentAcademicProfile = async ({ id, values }: { id: number; values: unknown }) => (await api.patch<ApiResponse<User>>(`/admin/students/${id}/academic-profile`, values)).data.data;

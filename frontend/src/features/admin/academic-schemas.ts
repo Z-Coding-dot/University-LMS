@@ -15,6 +15,8 @@ export const offeringSchema = z.object({ course_id: positiveId, semester_id: pos
 const time = requiredText.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, 'admin:invalidTime');
 export const scheduleSchema = z.object({ slots: z.array(z.object({ weekday: numeric(1, 7).refine(Number.isInteger), start: time, end: time, room: requiredText.max(100) }).strict().refine(row => row.start < row.end, { path: ['end'], message: 'admin:invalidTime' })).max(30) }).strict();
 export const enrollmentSchema = z.object({ student_ids: z.array(positiveId).min(1).max(100).refine(ids => new Set(ids).size === ids.length), make_current: z.boolean() }).strict();
+const optionalAcademicId = z.preprocess(value => value === 'none' ? null : value, positiveId.nullable());
+export const studentAcademicProfileSchema = z.object({ department_id: optionalAcademicId, current_semester_id: optionalAcademicId }).strict();
 export const academicSettingsSchema = z.object({
   pass_mark: numeric(0, 100), attendance_warning_threshold: numeric(0, 100),
   letter_scale: z.array(z.object({ min: numeric(0, 100), max: numeric(0, 100), letter: requiredText.max(10) }).strict()).min(1).max(20).refine(validLetterScale, 'admin:invalidScale'),

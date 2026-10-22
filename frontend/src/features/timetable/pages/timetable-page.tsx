@@ -17,5 +17,5 @@ export function TimetablePage() {
   const allowed = user?.role !== 'teacher' || can(user, PERMISSIONS.viewTimetable);
   const query = useAcademicQuery(['timetable', semester], () => academicApi.timetable({ semester_id: semester === 'current' ? undefined : semester }), allowed);
   if (!allowed) return <Navigate to="/403" replace />;
-  return <><PageHeader title={t('timetable')} actions={<Select aria-label={t('semester')} value={semester} onValueChange={setSemester} options={[{ value: 'current', label: t('currentSemester') }, ...(catalog.data?.semesters ?? []).map(item => ({ value: String(item.id), label: item.name[locale] }))]} />} /><QueryState pending={query.isPending} error={query.isError} retry={query.refetch}>{query.data && <WeekTimetable slots={query.data.slots} weekendDays={query.data.weekend_days} />}</QueryState></>;
+  return <><PageHeader title={t('timetable')} actions={<Select aria-label={t('semester')} value={semester} onValueChange={setSemester} options={[{ value: 'current', label: t('currentSemester') }, ...(catalog.data?.semesters ?? []).map(item => ({ value: String(item.id), label: item.name[locale] }))]} />} /><QueryState pending={query.isPending} error={query.error} retry={query.refetch}>{query.data && <WeekTimetable slots={query.data.slots} weekendDays={query.data.weekend_days} />}</QueryState></>;
 }

@@ -1,17 +1,18 @@
 import { z } from 'zod';
 import type { Assignment, Attachment } from '../types';
 import { can, PERMISSIONS } from '../../lib/permissions';
-import { attendancePercentage, canTransitionGrade, cumulativeAverage, letterGrade, weightedAverage } from '../../lib/grading';
+import { attendancePercentage, canTransitionGrade, cumulativeAverage, letterGrade, studentGradeBreakdown, studentGradeItems, validGradeComponentRevision, weightedAverage } from '../../lib/grading';
 import { publishedCourseTotal, visibleDashboardAnnouncements } from '../../lib/dashboard';
 import { calendarDay } from '../../lib/date';
 import { validateUpload } from '../../lib/upload';
 import { UPLOAD_LIMITS } from '../../config/uploads';
 import { announcementSchema } from '../../features/announcements/schemas';
 import { assignmentSchema, attendanceSchema, componentSchema, gradeBatchSchema, lectureSchema, submissionGradeSchema, weekNumber } from '../../features/teacher/schemas';
-import { submissionRestriction } from '../../lib/coursework';
+import { currentTeachingWeek, submissionRestriction } from '../../lib/coursework';
+import { COURSE_WEEKS } from '../../config/constants';
 import { positiveId } from '../../lib/validation';
 import { academicYears, announcements, assignments, attendanceRecords, attendanceSessions, courses, departments, enrollments, faculties, gradeComponents, gradeEntries, lectures, semesters, settings, submissions, users } from './fixtures';
-import { accessibleOfferings, courseView, currentSemesterId, gradeStates, requireOffering, seedText } from './model';
+import { accessibleOfferings, courseView, currentSemesterId, gradeStates, requireOffering, seededAnnouncementIds, seedText } from './model';
 import { fail, nextId, page, respond, validate, type MockContext } from './http';
 
 const uploads = new Map<number, { file: Attachment; user_id: number; offering_id: number; purpose: string }>();
@@ -56,7 +57,7 @@ export function handleAcademic(ctx: MockContext) {
     }
     return fail(ctx, 404, 'common:notFoundTitle');
   }
-  const courseMatch = path.match(/^\/courses\/(\d+)(?:\/(roster|attendance|attendance-history|grade-breakdown|grades|grade-components|grade-status))?$/);
+  const courseMatch = path.match(/^\/courses\/(\d+)(?:\/(weeks|roster|attendance|attendance-history|grade-breakdown|grades|grade-components|grade-status))?$/);
   if (courseMatch) {
     const offering = requireOffering(ctx, Number(courseMatch[1])); const id = offering.id; const action = courseMatch[2];
     const studentIds = enrollments.filter(item => item.offering_id === id).map(item => item.student_id);
@@ -68,15 +69,22 @@ export function handleAcademic(ctx: MockContext) {
     const sessionIds = new Set(sessions.map(item => item.id));
     const records = attendanceRecords.filter(item => sessionIds.has(item.session_id) && (user.role !== 'student' || item.student_id === user.id));
     const status = gradeStates.get(id) ?? 'draft';
-    if (!action && method === 'GET') return ok({ ...courseView(offering), components, grades: user.role === 'student' ? entries.filter(item => item.student_id === user.id && item.status !== 'draft' && status !== 'draft') : [], attendance_sessions: sessions, attendance_records: records, attendance_percent: attendancePercentage(records.map(item => item.status), settings.attendance_counted_statuses), settings });
+    if (action === 'weeks' && method === 'GET') {
+      const semester = semesters.find(item => item.id === offering.semester_id)!;
+      const notices = visibleDashboardAnnouncements(user, announcements, [id]).filter(item => item.offering_id === id);
+      return ok({ current_week: currentTeachingWeek(semester.starts_at, semester.ends_at), course_announcement_count: notices.filter(item => item.week_number === null).length,
+        weeks: COURSE_WEEKS.map(week => ({ week_number: week, lecture_count: lectures.filter(item => item.offering_id === id && item.week_number === week).length, assignment_count: assignments.filter(item => item.offering_id === id && item.week_number === week).length, announcement_count: notices.filter(item => item.week_number === week).length })) });
+    }
+    if (!action && method === 'GET') return ok({ ...courseView(offering), components, grades: user.role === 'student' ? entries.filter(item => item.student_id === user.id && item.status !== 'draft' && status !== 'draft') : [], attendance_sessions: sessions, attendance_records: records, attendance_percent: attendancePercentage(records.map(item => item.status), settings.attendance_counted_statuses, sessions.length * (user.role === 'student' ? 1 : students.length)), settings });
     if (action === 'attendance-history' && method === 'GET') {
       if (user.role !== 'student') return fail(ctx);
-      return page(ctx, records.map(item => ({ ...item, date: sessions.find(session => session.id === item.session_id)!.date })), { date: row => row.date, status: row => row.status }, '-date');
+      return page(ctx, sessions.map(session => ({ id: session.id, date: session.date, status: records.find(record => record.session_id === session.id)?.status ?? null })), { date: row => row.date, status: row => row.status }, '-date');
     }
     if (action === 'grade-breakdown' && method === 'GET') {
       if (user.role !== 'student') return fail(ctx);
-      const rows = components.map(component => { const entry = status === 'draft' ? undefined : entries.find(item => item.component_id === component.id && item.student_id === user.id && item.status !== 'draft'); return { ...component, score: entry?.score ?? null, feedback: entry?.feedback ?? null }; });
-      return page(ctx, rows, { name: row => row.name[locale], weight: row => row.weight, score: row => row.score });
+      const coursework = assignments.filter(item => item.offering_id === id).map(item => ({ ...item, title: seededAssignments.has(item.id) ? seedText(item.title, locale) : item.title }));
+      const rows = studentGradeItems({ offeringId: id, components, entries, assignments: coursework, submissions, studentId: user.id, status, locale });
+      return page(ctx, rows, { title: row => row.title, kind: row => row.kind, week_number: row => row.week_number, weight: row => row.weight, score: row => row.score });
     }
     if (action === 'roster' && method === 'GET') { requireTeacher(); return page(ctx, students, { name: row => row.name, email: row => row.email, institutional_id: row => row.profile.institutional_id }, 'name'); }
     if (action === 'attendance') {
@@ -116,12 +124,13 @@ export function handleAcademic(ctx: MockContext) {
       requireTeacher(PERMISSIONS.enterGrades);
       if (status !== 'draft') return fail(ctx, 403, 'academic:componentsPublished');
       const input = validate(componentSchema, body, config);
-      if (input.components.some(component => component.id !== undefined && !componentIds.has(component.id))) return fail(ctx, 422, 'academic:invalidGrades');
+      if (input.components.some(component => component.id !== undefined && !componentIds.has(component.id)) || !validGradeComponentRevision(input.components, entries)) return fail(ctx, 422, 'academic:invalidGrades');
+      let componentId = nextId(gradeComponents);
       const keep = new Set(input.components.flatMap(item => item.id ? [item.id] : []));
       for (let i = gradeComponents.length - 1; i >= 0; i--) if (gradeComponents[i].offering_id === id && !keep.has(gradeComponents[i].id)) gradeComponents.splice(i, 1);
       for (const component of input.components) {
         const existing = gradeComponents.find(item => item.id === component.id);
-        const next = { ...component, id: component.id ?? nextId(gradeComponents), offering_id: id };
+        const next = { ...component, id: component.id ?? componentId++, offering_id: id };
         if (existing) Object.assign(existing, next); else gradeComponents.push(next);
       }
       const validIds = new Set(gradeComponents.map(item => item.id));
@@ -144,7 +153,12 @@ export function handleAcademic(ctx: MockContext) {
         const course = courses.find(course => course.id === item.course_id)!;
         const status = gradeStates.get(item.id) ?? 'draft';
         const total = status === 'draft' ? null : publishedCourseTotal(gradeComponents.filter(component => component.offering_id === item.id), gradeEntries, user.id);
-        return { id: item.id, code: course.code, name: course.name, credits: course.credits, total, letter: total === null ? null : letterGrade(total, settings.letter_scale), status };
+        const assessments = studentGradeBreakdown(gradeComponents.filter(component => component.offering_id === item.id), gradeEntries, user.id, status);
+        const coursework = assignments.filter(assignment => assignment.offering_id === item.id).map(assignment => {
+          const submission = submissions.find(row => row.assignment_id === assignment.id && row.student_id === user.id);
+          return { id: assignment.id, title: seededAssignments.has(assignment.id) ? seedText(assignment.title, locale) : assignment.title, week_number: assignment.week_number, submitted: !!submission, score: submission?.score ?? null, feedback: submission?.feedback ?? null };
+        });
+        return { id: item.id, code: course.code, name: course.name, credits: course.credits, total, letter: total === null ? null : letterGrade(total, settings.letter_scale), status, assessments, assignments: coursework };
       });
       return { semester, courses: rows, average: weightedAverage(rows.flatMap(row => row.total === null ? [] : [{ total: row.total, credits: row.credits }])) };
     });
@@ -177,11 +191,11 @@ export function handleAcademic(ctx: MockContext) {
     const accessibleIds = accessibleOfferings(user).map(item => item.id);
     const requestedOffering = Number(config.params?.offering_id);
     if (requestedOffering && !accessibleIds.includes(requestedOffering)) return fail(ctx);
-    if (id && !assigned) return fail(ctx, 404, 'common:notFoundTitle');
+    if (assignmentMatch[1] && !assigned) return fail(ctx, 404, 'common:notFoundTitle');
     if (assigned) requireOffering(ctx, assigned.offering_id);
     const view = (item: Assignment) => ({ ...item, title: seededAssignments.has(item.id) ? seedText(item.title, locale) : item.title, description: seededAssignments.has(item.id) ? seedText(item.description, locale) : item.description, course_name: courses.find(course => course.id === requireOffering(ctx, item.offering_id).course_id)!.name, submission: user.role === 'student' ? submissions.find(row => row.assignment_id === item.id && row.student_id === user.id) ?? null : null, submission_count: submissions.filter(row => row.assignment_id === item.id).length });
     if (assigned && !assignmentMatch[2] && method === 'GET') return ok(view(assigned));
-    if (!id && method === 'GET') {
+    if (!assignmentMatch[1] && method === 'GET') {
       const week = config.params?.week_number === undefined ? undefined : validate(weekNumber, config.params.week_number, config);
       const rows = assignments.filter(item => accessibleIds.includes(item.offering_id) && (!requestedOffering || requestedOffering === item.offering_id) && (!week || item.week_number === week)).map(view);
       return page(ctx, rows, { title: row => row.title, due_at: row => row.due_at, week_number: row => row.week_number, course: row => row.course_name[locale] }, 'due_at');
@@ -200,7 +214,7 @@ export function handleAcademic(ctx: MockContext) {
         return ok(row, 201);
       }
     }
-    if ((!id && method === 'POST') || (assigned && method === 'PATCH')) {
+    if ((!assignmentMatch[1] && method === 'POST') || (assigned && method === 'PATCH')) {
       requireTeacher(PERMISSIONS.manageAssignments);
       const input = validate(assignmentSchema, body, config); requireOffering(ctx, input.offering_id);
       if (assigned && assigned.offering_id !== input.offering_id) return fail(ctx, 422, 'academic:invalidCourse');
@@ -224,7 +238,10 @@ export function handleAcademic(ctx: MockContext) {
     const ids = accessibleOfferings(user).map(item => item.id); const offeringId = Number(config.params?.offering_id);
     if (offeringId && !ids.includes(offeringId)) return fail(ctx);
     if (method === 'GET' && !announcementMatch[1]) {
-      const rows = visibleDashboardAnnouncements(user, announcements, ids).filter(item => !offeringId || item.audience === 'all' || item.offering_id === offeringId).map(item => ({ ...item, title: item.id <= 3 ? seedText(item.title, locale) : item.title, body: item.id <= 3 ? seedText(item.body, locale) : item.body, author_name: users.find(author => author.id === item.author_id)?.name ?? '' }));
+      const week = config.params?.week_number === undefined ? undefined : validate(weekNumber, config.params.week_number, config);
+      const courseWide = config.params?.course_wide === undefined ? false : validate(z.coerce.number().int().min(0).max(1), config.params.course_wide, config) === 1;
+      if (week && courseWide) return fail(ctx, 422, 'common:validationError');
+      const rows = visibleDashboardAnnouncements(user, announcements, ids).filter(item => (!offeringId || item.offering_id === offeringId) && (!week || item.week_number === week) && (!courseWide || item.week_number === null)).map(item => ({ ...item, title: seededAnnouncementIds.has(item.id) ? seedText(item.title, locale) : item.title, body: seededAnnouncementIds.has(item.id) ? seedText(item.body, locale) : item.body, author_name: users.find(author => author.id === item.author_id)?.name ?? '' }));
       return page(ctx, rows, { title: row => row.title, created_at: row => row.created_at, author_name: row => row.author_name }, '-created_at');
     }
     if (method === 'POST' || method === 'PATCH') {
@@ -237,7 +254,7 @@ export function handleAcademic(ctx: MockContext) {
       if (existing && user.role !== 'admin' && existing.author_id !== user.id) return fail(ctx);
       if (existing?.offering_id) requireOffering(ctx, existing.offering_id);
       const row = { id: existing?.id ?? nextId(announcements), ...input, role: input.audience === 'role' ? input.role! : null, offering_id: input.audience === 'offering' ? input.offering_id! : null, author_id: existing?.author_id ?? user.id, created_at: existing?.created_at ?? new Date().toISOString() };
-      if (existing) Object.assign(existing, row); else announcements.push(row);
+      if (existing) { Object.assign(existing, row); seededAnnouncementIds.delete(existing.id); } else announcements.push(row);
       return ok(row, existing ? 200 : 201);
     }
   }

@@ -24,6 +24,7 @@ export const router = createBrowserRouter([
         { path: '/results', lazy: async () => ({ Component: (await import('../features/student/pages/results-page')).ResultsPage }) },
       ] },
       { element: <RequireRole roles={['admin', 'teacher']} />, children: [
+        { path: '/activity', lazy: async () => ({ Component: (await import('../features/dashboard/pages/activity-page')).ActivityPage }) },
         { path: '/gradebook', lazy: async () => ({ Component: (await import('../features/teacher/pages/gradebook-page')).GradebookPage }) },
       ] },
       { path: '/profile', lazy: async () => ({ Component: (await import('../features/profile/pages/profile-page')).ProfilePage }) },

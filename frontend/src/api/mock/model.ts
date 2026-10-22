@@ -1,10 +1,11 @@
 import type { CourseOffering, User } from '../types';
 import type { CourseView } from '../types/academic';
 import type { GradeStatus } from '../../config/constants';
-import { courses, enrollments, offerings, semesters, users } from './fixtures';
+import { announcements, courses, enrollments, offerings, semesters, users } from './fixtures';
 import { calendarDay } from '../../lib/date';
 import { fail, type MockContext } from './http';
 export const gradeStates = new Map<number, GradeStatus>(offerings.map(item => [item.id, item.id < 4 ? 'locked' : item.id < 6 ? 'published' : 'draft']));
+export const seededAnnouncementIds = new Set(announcements.map(item => item.id));
 export const currentSemesterId = () => semesters.find(item => item.starts_at <= calendarDay(new Date()) && item.ends_at >= calendarDay(new Date()))?.id ?? semesters.at(-1)?.id;
 export function accessibleOfferings(user: User): CourseOffering[] {
   return offerings.filter(item => user.role === 'admin' || (user.role === 'teacher' ? item.teacher_id === user.id : enrollments.some(enrollment => enrollment.offering_id === item.id && enrollment.student_id === user.id)));

@@ -2,7 +2,7 @@
   "week": "هفتهٔ درسی",
   "weekNumber": "هفتهٔ {{value}}",
   "weeklyLearning": "آموزش هفتگی",
-  "weeksDescription": "۱۶ هفته درس، منابع و وظایف درسی این مضمون.",
+  "weeksDescription": "هفتهٔ جاری یا تمام هفته‌ها را انتخاب کنید. هر هفته را باز کنید تا رهنمایی‌ها، درس‌ها، فایل‌ها و نمرات وظایف آن را ببینید.",
   "semesterSubjects": "باز یا بسته‌کردن مضمون‌های سمستر جاری",
   "noSemesterSubjects": "هنوز در این سمستر مضمونی ثبت نشده است.",
   "lectures": "درس‌ها و منابع درسی",
@@ -57,7 +57,11 @@
   "description": "توضیحات",
   "createAnnouncement": "ایجاد اطلاعیه",
   "audience": "مخاطبان",
-  "audiences": { "all": "همه", "role": "یک نقش", "offering": "یک مضمون" },
+  "audiences": {
+    "all": "همه",
+    "role": "یک نقش",
+    "offering": "یک مضمون"
+  },
   "role": "نقش",
   "details": "مشاهدهٔ جزئیات",
   "edit": "ویرایش",
@@ -114,5 +118,29 @@
   "invalidFiles": "فایل‌های معتبر مربوط به این مضمون را انتخاب کنید.",
   "deadlinePassed": "مهلت تسلیمی پایان یافته است.",
   "alreadyGraded": "به این تسلیمی نمره داده شده و قابل تغییر نیست.",
-  "invalidCourse": "مضمون انتخاب‌شده معتبر نیست."
+  "invalidCourse": "مضمون انتخاب‌شده معتبر نیست.",
+  "attendanceWarning": "حاضری کمتر از حد هشدار پوهنتون ({{threshold}}٪) است. جلساتی که هنوز ثبت نشده‌اند نیز در محاسبه شامل می‌شوند.",
+  "allWeeks": "تمام هفته‌ها",
+  "currentWeek": "هفتهٔ جاری",
+  "currentWeekLabel": "هفتهٔ جاری: {{week}}",
+  "weekContentCounts": "{{lectures}} درس · {{assignments}} وظیفه · {{notices}} اطلاعیه",
+  "weekNotices": "اعلانات و رهنمایی‌های هفتگی",
+  "courseNotices": "اعلانات عمومی مضمون",
+  "courseWideNotice": "عمومی مضمون",
+  "addNotice": "افزودن اعلان یا رهنمایی",
+  "weekRequiresCourse": "اعلان هفتگی باید مربوط به یک مضمون باشد.",
+  "assignmentGrades": "نمرات وظایف درسی",
+  "assignmentGradesHint": "تمام وظایف این مضمون همراه با وضعیت تسلیمی، نمره و نظر استاد شما.",
+  "graded": "نمره داده شده",
+  "noAssignments": "هنوز وظیفه‌ای داده نشده است",
+  "notConfigured": "تنظیم نشده",
+  "assessmentWeight": "وزن: {{value}}٪",
+  "assignmentGradeCount": "{{graded}} از {{total}} نمره داده شده · مشاهدهٔ همه",
+  "assessmentKinds": {
+    "midterm": "وسط سمستر",
+    "endterm": "پایان سمستر",
+    "final": "نهایی",
+    "fx": "FX"
+  },
+  "resultsBreakdownHint": "مجموع نمرات بر اساس وزن بخش‌های ارزیابی محاسبه می‌شود. نمرات وظایف درسی را باز کنید تا نمره و نظر هر وظیفه را ببینید."
 }
