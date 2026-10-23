@@ -1,6 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { assessmentKind, attendancePercentage, canTransitionGrade, courseTotal, cumulativeAverage, isPassing, letterGrade, semesterAverage, studentGradeBreakdown, studentVisibleGrades, validGradeComponentRevision } from './grading';
+import { assessmentKind, attendancePercentage, canTransitionGrade, courseTotal, cumulativeAverage, isPassing, letterGrade, semesterAverage, studentGradeBreakdown, studentGradeItems, studentVisibleGrades, validGradeComponentRevision } from './grading';
+const combinedBook = {
+  offeringId: 4, studentId: 5, status: 'published' as const, locale: 'en' as const,
+  components: [{ id: 1, offering_id: 4, name: { fa: '', en: 'Midterm' }, max_score: 40, weight: 40 }],
+  entries: [{ id: 1, student_id: 5, component_id: 1, score: 30, feedback: 'Exam feedback', status: 'published' as const, updated_at: '2026-10-21T00:00:00Z' }],
+  assignments: [{ id: 1, offering_id: 4, week_number: 4, title: 'Exercise', description: '', due_at: '2026-10-25T12:00:00Z', submission_enabled: true, attachments: [] }],
+  submissions: [{ id: 1, assignment_id: 1, student_id: 5, files: [], submitted_at: '2026-10-20T12:00:00Z', score: 0, feedback: 'Assignment feedback' }],
+};
 describe('academic calculations (display previews)', () => {
+  it('combines components and assignments without losing colliding IDs or zero scores', () => {
+    const rows = studentGradeItems(combinedBook);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ kind: 'component', source_id: 1, score: 30, max_score: 40, weight: 40 });
+    expect(rows[1]).toMatchObject({ kind: 'assignment', source_id: 1, score: 0, max_score: 100, weight: null, status: 'graded' });
+    expect(new Set(rows.map(row => `${row.kind}:${row.source_id}`)).size).toBe(2);
+  });
+  it('scopes combined grades to the course and student while hiding draft exam feedback', () => {
+    const rows = studentGradeItems({ ...combinedBook, status: 'draft', assignments: [...combinedBook.assignments, { ...combinedBook.assignments[0], id: 2, offering_id: 99 }], submissions: combinedBook.submissions.map(row => ({ ...row, student_id: 6 })) });
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({ score: null, feedback: null, status: 'draft' });
+    expect(rows[1]).toMatchObject({ score: null, feedback: null, status: 'not_submitted' });
+  });
   it('maps assessment labels without assigning weights or treating custom components as finals', () => {
     expect(assessmentKind('Midterm')).toBe('midterm');
     expect(assessmentKind('End-term exam')).toBe('endterm');

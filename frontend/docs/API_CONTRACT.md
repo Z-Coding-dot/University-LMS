@@ -80,7 +80,7 @@ Teacher permissions never grant access to another teacher's offerings.
 | GET | `/courses/{id}/weeks` | Enrolled student, assigned teacher or admin | None | `CourseWeeksResponse` below |
 | GET | `/courses/{id}/roster` | Assigned teacher/admin | List params | Paginated `User[]` for enrolled students |
 | GET | `/courses/{id}/attendance-history` | Enrolled student, own history | List params | Paginated `AttendanceHistoryRow[]` |
-| GET | `/courses/{id}/grade-breakdown` | Enrolled student, own published scores | List params | Paginated `(GradeComponent & { score: number/null, feedback: string/null })[]` |
+| GET | `/courses/{id}/grade-breakdown` | Enrolled student, own scores only | List params | Paginated `StudentGradeItem[]`: components and assignments in one list |
 | GET | `/courses/{id}/attendance` | Assigned teacher/admin | None | `{ students: User[], sessions: AttendanceSession[], records: AttendanceRecord[] }` |
 | POST | `/courses/{id}/attendance` | Admin or assigned teacher with `attendance.take` | `{ date, records: { student_id, status }[] }` | `AttendanceSession` |
 | GET | `/courses/{id}/grades` | Admin or assigned teacher with `grades.enter` or `grades.publish` | None | `{ components: GradeComponent[], entries: GradeEntry[], status }` |
@@ -115,6 +115,16 @@ Canonical definitions are in `src/api/types/academic.ts` and `src/api/types/inde
   `attendance_records`, `attendance_percent: number/null`, `settings`.
   Student scores/feedback/attendance records are their own; draft grades are
   omitted. Grade breakdown returns null score/feedback for unpublished components.
+- `StudentGradeItem`: `{ kind: component/assignment, source_id: numeric component
+  or assignment ID, title: localized string, week_number: number/null,
+  score: number/null, max_score, weight: number/null, feedback: string/null,
+  status: draft/published/locked/not_submitted/submitted/graded }`.
+  `/grade-breakdown` combines every configured component and every course
+  assignment before pagination/search/sort. Component scores/feedback remain
+  hidden for draft courses or entries. Assignment scores are the current
+  student's own submission only, out of 100, with null weight; they do not change
+  the course component weights. Default order is components then assignments;
+  row identity is `(kind, source_id)` because their numeric IDs can coincide.
 - `AttendanceHistoryRow`: `{ id: session ID, date, status: AttendanceStatus/null }`.
   Include every offering session, using null when the student has no record yet.
   The UI labels these sessions unmarked; it never invents an absent record.
@@ -157,7 +167,7 @@ Canonical definitions are in `src/api/types/academic.ts` and `src/api/types/inde
   enrollment/assigned-teacher checks even if navigation is bypassed.
 - Sort/search columns: courses `name, code, credits, teacher`; roster
   `name, email, institutional_id`; history `date, status`; breakdown
-  `name, weight, score`; results `name, code, credits, total`; assignments
+  `title, kind, week_number, weight, score`; results `name, code, credits, total`; assignments
   `title, due_at, week_number, course`; lectures `title, week_number, updated_at`;
   submissions `student_name, submitted_at, score`;
   announcements `title, created_at, author_name`. Unknown sort fields return 422.

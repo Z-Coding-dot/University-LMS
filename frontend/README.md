@@ -83,12 +83,17 @@ searchable, paginated lists. Each item opens its course tab/date or assignment
 review, with permissions and teacher ownership enforced by the mock API.
 
 The sidebar uses a solid dark surface with an orange active state. Collapse is
-beside the expanded logo; the collapsed expand button moves below the logo and
-appears on hover/focus, remaining visible on touch devices. The scrollbar is hidden
+beside the expanded logo; the collapsed expand button overlays the logo and
+appears when that logo is hovered or keyboard-focused. The scrollbar is hidden
 with keyboard/wheel scrolling retained. Account identity, role and sign-out are in
 the topbar profile menu. Notifications open announcement details directly. Shared
 typography uses a compact 12px base on desktop/mobile while preserving 44px touch
 targets. Mobile stacks panels and uses shared DataTable cards, 10 records per page.
+Mobile uses only bottom navigation for every role, with no sidebar or hamburger.
+The bar is mounted at the document body outside page animations and retained on
+page errors. Staff/admin extra destinations open in a non-modal More menu above
+the bar. Shared safe-area height and page clearance keep Results reachable at
+phone/tablet widths. Table actions align to the top with compact desktop padding.
 
 All data comes through typed dashboard endpoints. Students receive only their own
 enrollment and published grades; teachers receive assigned offerings. New students
@@ -122,13 +127,16 @@ directory exists; it never creates a backend or removes backend files.
 The student Courses navigation expands into enrolled subjects for their current
 semester, showing subject names/codes and instructors. It loads ten entries at a
 time when needed; the count is driven by university enrollment, never fixed at
-seven. The mobile drawer offers the same submenu; the Courses page lists subjects
+seven. On mobile, the bottom Courses tab opens the subject list
 with the shared responsive table. Each subject opens **Weekly learning** by
 default, with Week 1–16 and **All weeks** selection. The current week opens by
 default and is highlighted; All weeks shows every week heading and content counts
 with the current week expanded. Other weeks load their paginated content on opening.
 Course-wide and weekly announcements/instructions are shown here, with lecture
 downloads and assignment submission status, grades and feedback.
+The course Grades tab combines grade components and every assignment into one
+searchable, paginated table with type, score/maximum, week, weight, status and
+feedback. Assignment titles open the corresponding details.
 
 An assigned teacher needs `materials.manage` to upload weekly lecture text/files
 and `assignments.manage` to create weekly assignments. The teaching/full presets
@@ -175,7 +183,7 @@ workflow validation are separate remaining work.
 - `src/app`: query/motion/tooltip providers, session bootstrap, router and guards.
 - `src/components/ui`: all foundational primitives, `DatePicker`, and `DataTable`.
   Related controls share files and are re-exported from `ui/index.ts`.
-- `src/components/layout`: split auth layout, shell, sidebar, topbar, drawer,
+- `src/components/layout`: split auth layout, shell, desktop sidebar, topbar,
   bottom tabs and page headers. Related navigation components share one file.
 - `src/components/shared`: identity/status/grade cells, filters, semester/language
   switchers, stat/chart cards and responsive week timetable.
@@ -203,8 +211,8 @@ ISO strings. Afghan month names are explicit. Numeric input schemas must call
 `normalizeDigits` before validation. Passwords are never normalized.
 
 Fonts in `public/fonts` include their OFL licenses; no remote font requests.
-Dialogs become bottom sheets below `md`. Teacher/student navigation uses mobile
-bottom tabs; admin navigation uses a drawer. Reduced motion is respected globally.
+Dialogs become bottom sheets below `md`. All roles use mobile bottom tabs, with
+additional staff/admin sections in the More menu. Reduced motion is respected globally.
 
 ## How to add a module
 
