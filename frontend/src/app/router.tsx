@@ -11,6 +11,7 @@ export const router = createBrowserRouter([
   { element: <RequireAuth />, errorElement: <ErrorPage />, children: [
     { path: '/change-password', element: <ChangePasswordPage /> },
     { element: <AppShell />, children: [
+      { errorElement: <ErrorPage />, children: [
       { index: true, lazy: async () => ({ Component: (await import('../features/dashboard/pages/dashboard-page')).DashboardPage }) },
       { path: '/performance', lazy: async () => ({ Component: (await import('../features/dashboard/pages/performance-page')).PerformancePage }) },
       { path: '/resources', lazy: async () => ({ Component: (await import('../features/dashboard/pages/resources-page')).ResourcesPage }) },
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
         { path: '/admin/unlock-grades', lazy: async () => ({ Component: (await import('../features/admin/pages/unlock-grades-page')).UnlockGradesPage }) },
       ] },
       { path: '/403', element: <ErrorPage kind="forbidden" /> },
+      ] },
     ] },
   ] },
   { path: '*', element: <ErrorPage kind="notFound" /> },

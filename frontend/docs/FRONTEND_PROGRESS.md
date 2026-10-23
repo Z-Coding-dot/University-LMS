@@ -37,8 +37,8 @@ following the verification constraint in the brief.
 
 - Use shared compact 12px typography and smaller headings/metrics across desktop
   and mobile; preserve the 16px root layout scale and 44px touch targets.
-- Move the collapsed expand button below the logo, revealed on hover/focus with
-  a visible touch fallback. Remove account/footer sign-out from sidebar and drawer;
+- Overlay the collapsed expand button on the logo, revealed when the logo is
+  hovered or keyboard-focused. Remove account/footer sign-out from sidebar and drawer;
   show identity, role and sign-out in the topbar profile menu.
 - Hide Assignments, Learning files, Performance and Announcements navigation for
   students. Keep course assignment/file access and Overview announcements.
@@ -52,6 +52,14 @@ following the verification constraint in the brief.
   each course's assignment grades and weighted totals without exposing drafts.
 - Fix the shared responsive filter layout, centered search icon and truncation of
   long semester values. Extend DTOs, mock validation, contract and bilingual text.
+- Combine student grade components and assignments in one server-paginated table,
+  preserving draft-score privacy and distinct row keys for overlapping IDs.
+- Top-align table actions and reduce desktop action button padding; tighten mobile
+  action-row spacing while retaining touch targets. Remove mobile sidebar/drawer
+  and hamburger navigation for all roles. A persistent bottom bar is portaled to
+  the document body outside page animations; page errors render inside the shell.
+  Extra staff/admin links use a non-modal More menu above the bar. Reserve matching
+  safe-area space below content at phone and tablet widths.
 
 ### Final review requested before backend work
 
@@ -172,7 +180,7 @@ Required checks: TypeScript, ESLint, Vite production build, and Vitest restricte
 to pure utilities in `src/lib`. Authentication destination tests cover preserved
 course tabs/anchors, external targets, malformed state and redirect loops.
 
-The utility suite passes 36 tests across 10 files, including managed-account
+The utility suite passes 38 tests across 10 files, including managed-account
 credential rejection, permission presets, closed/expired/graded submissions,
 grade-scale coverage, timetable overlap rules, missing attendance records and
 the Kabul midnight boundary, current teaching weeks and private result breakdowns.

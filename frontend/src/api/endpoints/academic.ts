@@ -1,5 +1,5 @@
 import { api } from '../client';
-import type { ApiResponse, Assignment, Attachment, GradeComponent, Lecture, ListParams, PaginatedResponse, Semester, Submission, User } from '../types';
+import type { ApiResponse, Assignment, Attachment, Lecture, ListParams, PaginatedResponse, Semester, Submission, User } from '../types';
 import type { GradeStatus } from '../../config/constants';
 import type { AnnouncementView, AssignmentView, AttendanceBook, AttendanceHistoryRow, CourseDetail, CourseView, CourseWeeksResponse, GradeBook, ResultCourse, ResultsResponse, StudentGradeItem, SubmissionView } from '../types/academic';
 import type { TimetableItem } from '../../components/shared/week-timetable';

@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Menu, ChevronDown, Bell, LogOut } from 'lucide-react';
+import { ChevronDown, Bell, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../features/auth/store';
 import { useLogout } from '../../features/auth/hooks/useAuth';
-import { useUIStore } from './navigation';
 import { IconButton, Button } from '../ui/button';
 import { Avatar, EmptyState } from '../ui/surfaces';
 import { Dialog, Dropdown, Popover } from '../ui/overlays';
@@ -18,12 +17,12 @@ import { useDir } from '../../hooks/useDir';
 export function Topbar() {
   const { t } = useTranslation(); const { locale } = useDir();
   const navigate = useNavigate(); const user = useAuthStore(state => state.user);
-  const setOpen = useUIStore(state => state.setDrawerOpen); const logout = useLogout();
+  const logout = useLogout();
   const dashboard = useDashboard(false); const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [announcement, setAnnouncement] = useState<DashboardAnnouncement | null>(null);
   if (!user) return null;
   return <header className="sticky top-0 z-20 flex min-h-20 items-center justify-between gap-3 border-b border-gray-200/70 bg-white/95 px-4 pb-3 pt-[max(.75rem,env(safe-area-inset-top))] backdrop-blur-xl sm:px-6 lg:px-8">
-    <div className="flex min-w-0 items-center gap-3"><IconButton label={t('menu')} className="lg:hidden" onClick={() => setOpen(true)}><Menu size={22} /></IconButton><div className="min-w-0"><p className="truncate text-lg font-semibold tracking-tight lg:text-xl">{t('dashboard:welcome', { name: user.name })}</p><p className="hidden text-gray-500 sm:block">{t(`roles.${user.role}`)}</p></div></div>
+    <div className="flex min-w-0 items-center gap-3"><div className="min-w-0"><p className="truncate text-lg font-semibold tracking-tight lg:text-xl">{t('dashboard:welcome', { name: user.name })}</p><p className="hidden text-gray-500 sm:block">{t(`roles.${user.role}`)}</p></div></div>
     <div className="flex shrink-0 items-center gap-2 sm:gap-3">
       <span className="lg:hidden"><LanguageSwitcher compact /></span><span className="hidden lg:block"><LanguageSwitcher /></span>
       <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen} trigger={<IconButton label={t('dashboard:notifications')} className="relative"><Bell size={21} className="text-gray-600" />{(dashboard.data?.announcements.length ?? 0) > 0 && <span aria-hidden="true" className="absolute end-2 top-2 h-2 w-2 rounded-full bg-brand ring-2 ring-white" />}</IconButton>}>

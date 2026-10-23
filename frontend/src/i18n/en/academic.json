@@ -142,5 +142,10 @@
     "final": "Final",
     "fx": "FX"
   },
-  "resultsBreakdownHint": "Course totals follow the configured assessment weights. Expand assignment grades to see every assignment score and feedback."
+  "resultsBreakdownHint": "Course totals follow the configured assessment weights. Expand assignment grades to see every assignment score and feedback.",
+  "assessmentTitle": "Assessment",
+  "assessmentType": "Type",
+  "assignmentType": "Assignment",
+  "notApplicable": "Not applicable",
+  "combinedGradesHint": "Grade components and all course assignments, with scores, status and feedback."
 }
