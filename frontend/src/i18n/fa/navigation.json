@@ -18,5 +18,15 @@
   "grades": "نمرات",
   "performance": "پیشرفت تحصیلی",
   "announcements": "اعلانات",
-  "activity": "فعالیت‌های تدریسی"
+  "activity": "فعالیت‌های تدریسی",
+  "mobile": {
+    "workspace": "خانه",
+    "schedule": "برنامه",
+    "courses": "مضمون‌ها",
+    "results": "نتایج",
+    "grades": "نمرات",
+    "offerings": "صنف‌ها",
+    "structure": "مضامین",
+    "activity": "فعالیت"
+  }
 }

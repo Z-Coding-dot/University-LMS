@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, MoreHorizontal } from 'lucide-react';
@@ -38,8 +39,25 @@ export function Sidebar() {
 }
 export function MobileTabBar() {
   const user = useAuthStore(state => state.user); const { t } = useTranslation(); const location = useLocation(); const navigate = useNavigate();
+  const bar = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const element = bar.current;
+    if (!element) return;
+    const update = () => {
+      const height = element.getBoundingClientRect().height;
+      if (height) document.documentElement.style.setProperty('--mobile-tabs-height', `${height}px`);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => { observer.disconnect(); document.documentElement.style.removeProperty('--mobile-tabs-height'); };
+  }, [user?.role]);
   if (!user) return null;
-  const items = workspaceNavigation(user); const tabs = items.filter(item => item.bottomTab).slice(0, 4);
+  const items = workspaceNavigation(user);
+  const tabs = user.role === 'admin' ? ['workspace', 'offerings', 'structure', 'activity'].flatMap(id => items.filter(item => item.id === id)) : items.filter(item => item.bottomTab).slice(0, 4);
   const more = items.filter(item => !tabs.some(tab => tab.id === item.id));
-  return createPortal(<nav aria-label={t('navigation:navigation')} className="fixed inset-x-0 bottom-0 z-40 flex border-t border-gray-200 bg-white/95 min-h-[var(--mobile-tabs-height)] px-2 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-lg lg:hidden">{tabs.map(item => <Link key={item.id} to={item.to} aria-current={isNavigationActive(item, location) ? 'page' : undefined} className={cn('flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-base', isNavigationActive(item, location) ? 'text-brand' : 'text-gray-500')}><item.icon size={21} /><span className="max-w-full truncate">{t(item.label)}</span></Link>)}{more.length > 0 && <Dropdown side="top" modal={false} trigger={<button type="button" className="flex min-h-16 min-w-0 flex-1 flex-col items-center justify-center gap-1 text-gray-500"><MoreHorizontal size={21} aria-hidden="true" />{t('more')}</button>} items={more.map(item => ({ label: t(item.label), icon: <item.icon size={18} aria-hidden="true" />, onSelect: () => navigate(item.to) }))} />}</nav>, document.body);
+  const moreActive = more.some(item => isNavigationActive(item, location));
+  const tabClass = 'flex min-h-20 min-w-0 flex-1 flex-col items-center justify-start gap-1 px-1 py-2 text-center text-xs font-medium leading-4';
+  const labelClass = 'w-full whitespace-normal break-words';
+  return createPortal(<nav ref={bar} aria-label={t('navigation:navigation')} className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t border-gray-200 bg-white/95 px-1 pb-[max(.5rem,env(safe-area-inset-bottom))] backdrop-blur-lg lg:hidden">{tabs.map(item => <Link key={item.id} to={item.to} aria-label={t(item.label)} aria-current={isNavigationActive(item, location) ? 'page' : undefined} className={cn(tabClass, isNavigationActive(item, location) ? 'text-brand-action' : 'text-gray-600')}><item.icon size={21} className="shrink-0" aria-hidden="true" /><span className={labelClass}>{t(`navigation:mobile.${item.id}`, { defaultValue: t(item.label) })}</span></Link>)}{more.length > 0 && <Dropdown side="top" modal={false} trigger={<button type="button" aria-label={t('more')} className={cn(tabClass, moreActive ? 'text-brand-action' : 'text-gray-600')}><MoreHorizontal size={21} className="shrink-0" aria-hidden="true" /><span className={labelClass}>{t('more')}</span></button>} items={more.map(item => ({ label: t(item.label), icon: <item.icon size={18} className="shrink-0" aria-hidden="true" />, onSelect: () => navigate(item.to) }))} />}</nav>, document.body);
 }

@@ -24,7 +24,7 @@ export function DashboardPage() {
   if (query.isError) return <EmptyState error title={t('common:errorTitle')} description={t('common:errorDescription')} action={<Button onClick={() => void query.refetch()}>{t('common:retry')}</Button>} />;
   if (!user) return null;
   const data = query.data;
-  const shortcuts = visibleNavigation(user).filter(item => ['courses', 'assignments', 'student-accounts', 'teacher-accounts'].includes(item.id));
+  const shortcuts = visibleNavigation(user).filter(item => (user.role === 'admin' ? ['offerings', 'structure', 'teacher-accounts', 'student-accounts', 'activity', 'assignments'] : ['courses', 'assignments']).includes(item.id));
   return <>
     <PageHeader title={t(`titles.${user.role}`)} description={`${data.semester?.name[locale] ?? t('semesterNotAssigned')} · ${formatDate(data.as_of, locale)}`} actions={<Badge tone="brand">{t(`common:roles.${user.role}`)}</Badge>} />
     <p className="text-gray-600">{t('overview')}</p>

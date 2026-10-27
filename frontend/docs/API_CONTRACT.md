@@ -82,7 +82,7 @@ Teacher permissions never grant access to another teacher's offerings.
 | GET | `/courses/{id}/attendance-history` | Enrolled student, own history | List params | Paginated `AttendanceHistoryRow[]` |
 | GET | `/courses/{id}/grade-breakdown` | Enrolled student, own scores only | List params | Paginated `StudentGradeItem[]`: components and assignments in one list |
 | GET | `/courses/{id}/attendance` | Assigned teacher/admin | None | `{ students: User[], sessions: AttendanceSession[], records: AttendanceRecord[] }` |
-| POST | `/courses/{id}/attendance` | Admin or assigned teacher with `attendance.take` | `{ date, records: { student_id, status }[] }` | `AttendanceSession` |
+| POST | `/courses/{id}/attendance` | Assigned teacher with `attendance.take`; administrators receive 403 | `{ date, records: { student_id, status }[] }` | `AttendanceSession` |
 | GET | `/courses/{id}/grades` | Admin or assigned teacher with `grades.enter` or `grades.publish` | None | `{ components: GradeComponent[], entries: GradeEntry[], status }` |
 | PUT | `/courses/{id}/grades` | Admin or assigned teacher with `grades.enter`; unlocked | `{ entries: { student_id, component_id, score, feedback? }[] }` | `{ status }` |
 | PUT | `/courses/{id}/grade-components` | Admin or assigned teacher with `grades.enter`; draft only | `{ components: { id?, name: LocalizedName, max_score, weight }[] }` | `GradeComponent[]` |
@@ -100,7 +100,8 @@ Teacher permissions never grant access to another teacher's offerings.
 | POST | `/assignments/{id}/submissions` | Enrolled student; submission enabled; before deadline; ungraded | `{ file_ids: number[] }` | Own `Submission` (201); replaces existing ungraded submission |
 | GET | `/assignments/{id}/submissions` | Admin or assigned teacher with `assignments.manage` | List params | Paginated `(Submission & { student_name })[]` |
 | PATCH | `/submissions/{id}` | Admin or assigned teacher with `assignments.manage` | `{ score, feedback }` | `Submission` |
-| POST | `/uploads` | Student for submission; staff requires `assignments.manage` for instructions or `materials.manage` for lectures, plus offering access | Multipart: `offering_id`, `purpose: submission/assignment/lecture`, repeated `files` | `Attachment[]` (201) |
+| POST | `/uploads` | Student for submission; staff requires `assignments.manage` for instructions or `materials.manage` for lectures, plus offering access | Multipart: `offering_id`, `purpose: submission/assignment/lecture`, repeated `files[]` parts parsed as `files` | `Attachment[]` (201) |
+| GET | `/files/{id}` | Uploader; authorized offering audience for attached teaching files; submission owner, assigned teacher with `assignments.manage`, or admin for attached submission files | None | Private file download |
 | GET | `/announcements` | Authenticated, audience/ownership scoped | List params; `offering_id?`, `week_number?`, `course_wide?: 0/1` | Paginated `(Announcement & { author_name })[]` |
 | POST | `/announcements` | Admin or teacher with `announcements.post` | `{ title, body, audience, role?, offering_id?, week_number?: number/null }` | `Announcement` (201) |
 | PATCH | `/announcements/{id}` | Admin or original teacher author with permission and offering access | Same as create | `Announcement` |
@@ -284,9 +285,12 @@ the Laravel implementation must use transactions for enrollment and scheduling.
 | GET | `/admin/structure/{resource}` | List params | Paginated `StructureRow[]` |
 | POST | `/admin/structure/{resource}` | Resource fields below | Created structure row (201) |
 | PATCH | `/admin/structure/{resource}/{id}` | Resource fields below, full editable fields | Updated structure row |
-| GET | `/admin/offerings` | List params; `semester_id?` | Paginated `CourseView[]` |
+| DELETE | `/admin/structure/{resource}/{id}` | None; must have no linked records | 204 |
+| GET | `/admin/offerings` | List params; `semester_id?`, `teacher_id?` | Paginated `CourseView[]` |
 | POST | `/admin/offerings` | `{ course_id, semester_id, teacher_id, capacity }` | `CourseView` (201), empty schedule and draft grade state |
 | PATCH | `/admin/offerings/{id}` | Same fields; course/semester must remain unchanged | `CourseView` |
+| DELETE | `/admin/offerings/{id}` | None; must have no linked academic records | 204 |
+| GET | `/admin/teacher-activity` | List params | Paginated `TeacherActivity[]` |
 | GET | `/admin/offerings/{id}/candidates` | List params | Paginated active student `User[]` not already enrolled |
 | POST | `/admin/offerings/{id}/enrollments` | `{ student_ids: number[], make_current: boolean }` | Updated `CourseView` |
 | PUT | `/admin/offerings/{id}/schedule` | `{ slots: { weekday, start, end, room }[] }` | Updated `CourseView` with assigned slot IDs |
@@ -296,6 +300,24 @@ the Laravel implementation must use transactions for enrollment and scheduling.
 Grade unlocking uses the existing `PUT /courses/{id}/grade-status` with
 `{ status: "published" }`. Only admins can transition locked to published; all
 component entries change status together. Published student results stay visible.
+
+`TeacherActivity` is `{ id: teacher ID, name, courses, students, assignments,
+materials, graded, last_activity: ISO timestamp/null }`. Counts cover currently
+assigned offerings across all semesters; students are distinct. `graded` counts
+saved component grade entries, including drafts. Latest activity is the newest
+lecture update, grade update or teacher-authored course announcement timestamp.
+These are course records associated with the current instructor, not an audit log
+of who originally made each change. Sort/search fields are `name, courses,
+assignments, materials, graded, last_activity`; default `name`. Selecting a teacher
+opens `/admin/offerings?teacher_id={id}` to manage their assignments and course work.
+
+Deletion returns 422 (`admin:recordInUse` in the mock) for linked records. Protect
+faculties referenced by departments; departments referenced by courses or profiles;
+years referenced by semesters; semesters referenced by offerings or profiles; and
+subjects referenced by offerings. Offerings with enrollment, attendance sessions,
+grade components, assignments, lectures or announcements cannot be deleted. An
+unused offering's schedule and draft grade state are removed with the offering.
+Real implementations must enforce these checks transactionally and preserve history.
 
 `resource` is one of the following; payloads are strict and omit the server ID:
 
@@ -338,9 +360,9 @@ component entries change status together. Published student results stay visible
   with non-empty letters (max 10 characters) covering [0,100] without gaps/overlaps,
   at least one unique valid counted attendance status, and 0–7 unique ISO weekend
   days. The server is authoritative for all calculations after settings change.
-- No academic structure deletion or enrollment removal endpoint is implemented;
-  account deactivation preserves history. Real backend file/session persistence is
-  still required; mock changes reset on reload.
+- Structure deletion uses the protected DELETE routes above; there is no enrollment
+  removal endpoint. Account deactivation preserves history. The Laravel backend
+  persists files, sessions and academic records; mock changes reset on reload.
 
 ## Entity inventory
 
@@ -391,6 +413,20 @@ university timezone (Asia/Kabul); timetable HH:mm values are university local ti
 - `announcements: (Announcement & { author_name })[]`, newest first, at most 10.
 - `attendance_series: { label: localized date, attendance: percentage }[]`, up to
   6 recorded class days. Dates must be formatted consistently with the display locale.
+- `grade_distribution: { label: score range, students: count }[]`: six ranges
+  (0–49, 50–59, 60–69, 70–79, 80–89, 90–100) based on unrounded weighted totals.
+  Each enrolled student is counted once per selected course, only when every
+  component has a saved score. Includes drafts for administrators and assigned
+  teachers with `grades.enter` or `grades.publish`; empty for students and teachers
+  without those grants. Apply offering/search filters before aggregation. Return
+  an empty array if there are no complete totals, rather than inventing zero grades.
+
+Administrators supervise courses, instructors, assignments and gradebooks. Their
+overview shows pending assignment reviews instead of student attendance, their
+pending work contains grades only, and course navigation omits attendance entry.
+Attendance mutation requires the assigned teacher role even for an administrator
+account with a legacy `attendance.take` grant. Aggregate attendance remains
+available on Performance for oversight.
 
 `DashboardGrade` has the fields shown in `latest_grades`. The full paginated feed
 sorts/searches `course, student_name, updated_at, score`; default `-updated_at`.
@@ -476,7 +512,8 @@ recent published scores. Full staff feeds live at `/activity` using shared table
   passwords, manages academic structure/offerings/enrollment and teacher grants.
 - Permission strings: `attendance.take`, `grades.enter`, `grades.publish`,
   `assignments.manage`, `materials.manage`, `announcements.post`, `timetable.view`. Teacher grants are
-  explicit; admins have all implicitly. `grades.unlock` is admin-only even if
+  explicit; admins have all implicitly except `attendance.take`, which is
+  assigned-teacher-only. `grades.unlock` is admin-only even if
   another role's permissions array mistakenly includes it. Student access uses
   enrollment ownership, never teacher permission grants.
 - Grade component maximum > 0; score in [0, maximum]; weights in [0, 100], per
@@ -509,7 +546,8 @@ recent published scores. Full staff feeds live at `/activity` using shared table
 response shapes. Default is mock when unset. All mutations validate and use current
 session identity; unsupported routes return 404. Student/teacher accounts,
 dashboard reads, weekly teaching content and the admin academic endpoints in this
-contract are implemented. No Laravel server or persistent database is included.
+contract are implemented. The separate `backend/` Laravel API provides persistent
+storage when `VITE_USE_MOCK=false`; see its README for setup.
 Fixtures contain 1 admin, 3 teachers, 25 students, 1 faculty/department/year,
 2 semesters, 6 courses/offerings, enrollment, mixed draft/published/locked grades,
 attendance, Week 4/5/8 lectures and assignments, graded and pending submissions,

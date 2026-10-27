@@ -1,3 +1,4 @@
+import { DownloadLink } from './download-link';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from '../../api/types';
@@ -17,5 +18,5 @@ export function FileUpload({ offeringId, purpose, files, onChange, onBusyChange 
     const invalid = selected.map(validateUpload).find(Boolean); if (invalid) { setError(invalid); return; }
     setProgress(0); onBusyChange?.(true);
     try { const uploaded = await academicApi.upload(selected, offeringId, purpose, setProgress); onChange([...files, ...uploaded]); } catch (err) { setError(apiErrorMessage(err)); } finally { setProgress(null); onBusyChange?.(false); }
-  }} />}</FormField>{progress !== null && <Progress value={progress} label={t('uploading')} />}{files.map(file => <div key={file.id} className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-gray-50 p-2"><a href={file.url} download className="min-h-11 min-w-0 break-all py-2 text-brand">{file.name}</a><Button variant="ghost" disabled={progress !== null} onClick={() => onChange(files.filter(item => item.id !== file.id))}>{t('remove')}</Button></div>)}</div>;
+  }} />}</FormField>{progress !== null && <Progress value={progress} label={t('uploading')} />}{files.map(file => <div key={file.id} className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-gray-50 p-2"><DownloadLink file={file} className="min-h-11 min-w-0 break-all py-2 text-brand">{file.name}</DownloadLink><Button variant="ghost" disabled={progress !== null} onClick={() => onChange(files.filter(item => item.id !== file.id))}>{t('remove')}</Button></div>)}</div>;
 }

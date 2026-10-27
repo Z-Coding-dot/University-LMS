@@ -1,3 +1,4 @@
+import { DownloadLink } from '../../../components/shared/download-link';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment, Lecture } from '../../../api/types';
@@ -25,11 +26,11 @@ export function Lectures({ offeringId, week }: { offeringId: number; week: numbe
   const manage = can(user, PERMISSIONS.manageMaterials);
   const columns: DataColumn<Lecture>[] = [
     { id: 'title', header: t('title'), accessor: row => row.title, mobile: 'primary', sortable: true, cell: row => <button type="button" className="min-h-11 text-start text-brand-action" onClick={() => setSelected(row)}>{row.title}</button> },
-    { id: 'attachments', header: t('attachments'), accessor: () => null, mobile: 'primary', cell: row => <div className="space-y-1">{row.attachments.map(file => <a key={file.id} href={file.url} download className="block min-h-11 break-all py-2 text-brand-action">{file.name}</a>)}</div> },
+    { id: 'attachments', header: t('attachments'), accessor: () => null, mobile: 'primary', cell: row => <div className="space-y-1">{row.attachments.map(file => <DownloadLink key={file.id} file={file} className="block min-h-11 break-all py-2 text-brand-action">{file.name}</DownloadLink>)}</div> },
     { id: 'updated_at', header: t('date'), accessor: row => row.updated_at, mobile: 'secondary', sortable: true, cell: row => formatDate(row.updated_at, locale) },
   ];
   return <div className="space-y-4">{manage && <Button onClick={() => setEditor('new')}>{t('addLecture')}</Button>}<DataTable columns={columns} queryKey={['lectures', user?.id, offeringId, locale]} filterValues={{ week_number: week }} fetchPage={(params, signal) => academicApi.lectures(offeringId, params, signal)} getRowId={row => String(row.id)} label={t('lectures')} actions={row => <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => setSelected(row)}>{t('openLecture')}</Button>{manage && <Button variant="ghost" onClick={() => setEditor(row)}>{t('edit')}</Button>}</div>} />
     <Dialog title={t(editor === 'new' ? 'addLecture' : 'editLecture')} open={!!editor} onOpenChange={open => { if (!open) setEditor(null); }}>{editor && <LectureEditor key={editor === 'new' ? 'new' : editor.id} offeringId={offeringId} week={week} initial={editor === 'new' ? undefined : editor} onClose={() => setEditor(null)} />}</Dialog>
-    <Dialog title={selected?.title ?? t('lectures')} open={!!selected} onOpenChange={open => { if (!open) setSelected(null); }}>{selected && <div className="space-y-4"><p className="whitespace-pre-wrap text-gray-700">{selected.description}</p>{selected.attachments.map(file => <a key={file.id} href={file.url} download className="block min-h-11 break-all py-2 text-brand-action">{file.name}</a>)}</div>}</Dialog>
+    <Dialog title={selected?.title ?? t('lectures')} open={!!selected} onOpenChange={open => { if (!open) setSelected(null); }}>{selected && <div className="space-y-4"><p className="whitespace-pre-wrap text-gray-700">{selected.description}</p>{selected.attachments.map(file => <DownloadLink key={file.id} file={file} className="block min-h-11 break-all py-2 text-brand-action">{file.name}</DownloadLink>)}</div>}</Dialog>
   </div>;
 }

@@ -10,7 +10,7 @@ import { QueryState } from '../../../components/shared/query-state';
 import { ConfigForm, type ConfigField } from '../../../components/shared/config-form';
 import { Select } from '../../../components/ui/fields';
 import { Button } from '../../../components/ui/button';
-import { Dialog } from '../../../components/ui/overlays';
+import { ConfirmDialog, Dialog } from '../../../components/ui/overlays';
 import { DataTable, type DataColumn } from '../../../components/ui/data-table';
 import { calendarDay } from '../../../lib/date';
 import { structureSchemas } from '../academic-schemas';
@@ -40,7 +40,9 @@ function StructureEditor({ resource, initial, catalog, onClose }: { resource: St
 }
 export function StructurePage() {
   const { t } = useTranslation(['admin', 'common']); const { locale } = useDir(); const user = useAuthStore(state => state.user);
-  const [resource, setResource] = useState<StructureResource>('faculties'); const [editor, setEditor] = useState<StructureRow | 'new' | null>(null);
+  const [resource, setResource] = useState<StructureResource>('courses'); const [editor, setEditor] = useState<StructureRow | 'new' | null>(null);
+  const [removing, setRemoving] = useState<StructureRow | null>(null);
+  const remove = useAcademicMutation((id: number) => adminAcademicApi.deleteStructure(resource, id));
   const catalog = useAcademicQuery(['admin-catalog'], adminAcademicApi.catalog);
   const columns: DataColumn<StructureRow>[] = [
     { id: 'name', header: t('common:name'), accessor: row => typeof row.name === 'string' ? row.name : row.name[locale], mobile: 'primary', sortable: true },
@@ -49,7 +51,8 @@ export function StructurePage() {
   ];
   const resources = Object.keys(structureSchemas) as StructureResource[];
   return <><PageHeader title={t('structureTitle')} description={t('structureDescription')} actions={<Button disabled={!catalog.data} onClick={() => setEditor('new')}>{t('addRecord')}</Button>} /><div className="max-w-sm"><Select aria-label={t('structureTitle')} value={resource} onValueChange={value => setResource(value as StructureResource)} options={resources.map(value => ({ value, label: t(`structureResources.${value}`) }))} /></div>
-    <QueryState pending={catalog.isPending} error={catalog.error} retry={catalog.refetch}>{catalog.data && <DataTable key={resource} columns={columns.filter(column => resource === 'courses' || column.id === 'name')} queryKey={['structure', user?.id, locale, resource]} fetchPage={(params, signal) => adminAcademicApi.structure(resource, params, signal)} getRowId={row => String(row.id)} label={t(`structureResources.${resource}`)} actions={row => <Button variant="secondary" onClick={() => setEditor(row)}>{t('common:edit')}</Button>} />}</QueryState>
+    <QueryState pending={catalog.isPending} error={catalog.error} retry={catalog.refetch}>{catalog.data && <DataTable key={resource} columns={columns.filter(column => resource === 'courses' || column.id === 'name')} queryKey={['structure', user?.id, locale, resource]} fetchPage={(params, signal) => adminAcademicApi.structure(resource, params, signal)} getRowId={row => String(row.id)} label={t(`structureResources.${resource}`)} actions={row => <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => setEditor(row)}>{t('common:edit')}</Button><Button variant="ghost" onClick={() => setRemoving(row)}>{t('common:delete')}</Button></div>} />}</QueryState>
+    <ConfirmDialog title={t('deleteRecord')} description={t('deleteRecordDescription', { name: typeof removing?.name === 'string' ? removing.name : removing?.name[locale] })} open={!!removing} onOpenChange={open => { if (!open) setRemoving(null); }} loading={remove.isPending} onConfirm={() => { if (removing) remove.mutate(removing.id, { onSuccess: () => setRemoving(null) }); }} />
     <Dialog title={t(`structureResources.${resource}`)} open={!!editor} onOpenChange={open => { if (!open) setEditor(null); }}>{editor && catalog.data && <StructureEditor key={editor === 'new' ? 'new' : editor.id} resource={resource} initial={editor === 'new' ? undefined : editor} catalog={catalog.data} onClose={() => setEditor(null)} />}</Dialog>
   </>;
 }

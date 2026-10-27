@@ -1,3 +1,4 @@
+import { DownloadLink } from '../../../components/shared/download-link';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClipboardList, Download, FileArchive, MoreVertical } from 'lucide-react';
@@ -41,5 +42,5 @@ export function LearningFilesTable() {
     { id: 'course', header: t('course'), accessor: row => row.course[locale], mobile: 'secondary', sortable: true },
     { id: 'uploaded_at', header: t('common:date'), accessor: row => row.uploaded_at, mobile: 'secondary', sortable: true, cell: row => <span className="whitespace-nowrap">{formatDate(row.uploaded_at, locale)}</span> },
   ], [t, locale]);
-  return <DataTable columns={columns} queryKey={['dashboard-files', user?.id, locale]} fetchPage={dashboardApi.files} getRowId={row => `${row.offering_id}:${row.id}`} label={t('latestFiles')} filterValues={{ offering_id: offeringId }} actions={row => <a href={row.url} download className={buttonStyles({ variant: 'ghost', size: 'icon' })} aria-label={t('downloadFile', { name: row.name })} title={t('downloadFile', { name: row.name })}><Download size={19} /></a>} />;
+  return <DataTable columns={columns} queryKey={['dashboard-files', user?.id, locale]} fetchPage={dashboardApi.files} getRowId={row => `${row.offering_id}:${row.id}`} label={t('latestFiles')} filterValues={{ offering_id: offeringId }} actions={row => <DownloadLink file={row} className={buttonStyles({ variant: 'ghost', size: 'icon' })} aria-label={t('downloadFile', { name: row.name })} title={t('downloadFile', { name: row.name })}><Download size={19} /></DownloadLink>} />;
 }
