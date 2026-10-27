@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'numeric' => 'The :attribute field must be a number.',
+    'date_format' => 'The :attribute field must use the :format format.',
+    'after' => 'The :attribute field must be after :date.',
+    'after_or_equal' => 'The :attribute field must be on or after :date.',
+    'required_if' => 'The :attribute field is required when :other is :value.',
+    'file' => 'The :attribute field must be a valid file.',
+    'uploaded' => 'The file could not be uploaded. Check the server upload limits.',
+    'gt' => ['numeric' => 'The :attribute field must be greater than :value.'],
+    'required' => 'The :attribute field is required.', 'present' => 'The :attribute field must be present.',
+    'string' => 'The :attribute field must be text.', 'email' => 'Enter a valid email address.',
+    'integer' => 'The :attribute field must be an integer.', 'array' => 'The :attribute field must be a list.',
+    'boolean' => 'The :attribute field must be true or false.',
+    'in' => 'The selected :attribute is invalid.', 'exists' => 'The selected :attribute does not exist.',
+    'unique' => 'The :attribute is already in use.', 'distinct' => 'The :attribute field contains a duplicate value.',
+    'confirmed' => 'The :attribute confirmation does not match.', 'different' => 'The :attribute and :other must be different.',
+    'unknown' => 'This field is not allowed.', 'sort' => 'Choose a supported sort field.',
+    'min' => ['file' => 'The :attribute file must be at least :min KiB.', 'numeric' => 'The :attribute must be at least :min.', 'string' => 'The :attribute must have at least :min characters.', 'array' => 'The :attribute must have at least :min items.'],
+    'max' => ['file' => 'The :attribute file must be at most :max KiB.', 'numeric' => 'The :attribute may not exceed :max.', 'string' => 'The :attribute may not exceed :max characters.', 'array' => 'The :attribute may not exceed :max items.'],
+    'between' => ['numeric' => 'The :attribute must be between :min and :max.', 'string' => 'The :attribute must have between :min and :max characters.', 'array' => 'The :attribute must have between :min and :max items.'],
+    'password' => ['letters' => 'The password must contain a letter.', 'mixed' => 'The password must contain uppercase and lowercase letters.', 'numbers' => 'The password must contain a number.', 'symbols' => 'The password must contain a symbol.', 'uncompromised' => 'Choose another password.'],
+    'attributes' => [],
+];

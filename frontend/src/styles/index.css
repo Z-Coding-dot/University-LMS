@@ -8,7 +8,7 @@
 
 @layer base {
   :root { --brand: 255 107 0; --brand-action: 194 65 12; --brand-action-hover: 154 52 18; --amber: 255 178 2; --ink: 17 24 39; --canvas: 243 244 246; --surface: 255 255 255; color-scheme: light; }
-  html { min-width: 360px; background: rgb(var(--canvas)); font-size: 16px; }
+  html { min-width: 320px; background: rgb(var(--canvas)); font-size: 16px; }
   body { margin: 0; color: rgb(var(--ink)); font-family: 'Inter Variable', sans-serif; font-size: .75rem; line-height: 1.65; -webkit-font-smoothing: antialiased; }
   html[lang='fa-AF'] body { font-family: 'Vazirmatn Variable', sans-serif; line-height: 1.8; }
   button, input, select, textarea { font: inherit; }
@@ -35,7 +35,7 @@
 @keyframes overlay { from { opacity: 0; } to { opacity: 1; } }
 .animate-overlay { animation: overlay 160ms ease-out; }
 :root { --reveal-offset: 8px; }
-:root { --mobile-tabs-height: calc(4rem + max(1rem, env(safe-area-inset-bottom))); }
+:root { --mobile-tabs-height: calc(5rem + max(.5rem, env(safe-area-inset-bottom))); }
 .table-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .375rem; }
 @media (min-width: 768px) {
   .table-actions :is(button, a) { min-height: 2rem; padding: .25rem .625rem; border-radius: .5rem; }
@@ -49,4 +49,17 @@ html[dir='rtl'] { --reveal-offset: -8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Preserve readable touch controls on mobile, with compact spreadsheet cells on desktop. */
+.compact-table th, .compact-table td { padding: .5rem; }
+.compact-table :is(th, td):first-child { position: sticky; inset-inline-start: 0; z-index: 1; background: white; }
+.compact-table thead th:first-child { background: #f9fafb; }
+@media (min-width: 768px) {
+  .compact-table input { min-height: 2rem; font-size: .75rem; border-radius: .375rem; }
+  .compact-table td { padding: .375rem .5rem; }
+}
+@media (max-width: 1023px) {
+  html { scroll-padding-bottom: calc(var(--mobile-tabs-height) + 1.5rem); }
+  input, textarea, select { scroll-margin-bottom: calc(var(--mobile-tabs-height) + 1.5rem); }
 }

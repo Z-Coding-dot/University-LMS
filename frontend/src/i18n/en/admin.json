@@ -86,5 +86,15 @@
   "copyError": "Copy is unavailable. Select the email and password fields to copy them manually.",
   "handoverNote": "Give this email and password directly to the account holder. Only a university administrator can change student or teacher names, emails and passwords.",
   "emailTaken": "This email address already belongs to another university account.",
-  "updated": "Student details updated."
+  "updated": "Student details updated.",
+  "teacherActivityTitle": "Teacher activity",
+  "teacherActivityDescription": "Current course assignments, teaching materials and grade entries across all semesters. Select a teacher to manage their classes. Latest activity reflects materials, grade entries and announcements for their currently assigned courses.",
+  "activityMaterials": "Lecture materials",
+  "activityGrades": "Grade entries",
+  "lastAcademicActivity": "Latest recorded activity",
+  "allTeachers": "All teachers",
+  "deleteRecord": "Delete record",
+  "deleteOffering": "Delete class",
+  "deleteRecordDescription": "Delete {{name}}? Records with linked academic data must be kept.",
+  "recordInUse": "This record has linked academic data. Remove its dependencies first; student records are preserved."
 }

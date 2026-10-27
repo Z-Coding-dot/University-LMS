@@ -3,7 +3,7 @@ import { appConfig } from '../../config/app';
 import type { User } from '../types';
 import type { DashboardCourse, DashboardFile, DashboardGrade, DashboardMetric, DashboardSubmission, DashboardSummary, DashboardTask, DashboardWork } from '../types/dashboard';
 import type { DashboardQuery } from '../../features/dashboard/schemas';
-import { dashboardOfferingIds, publishedCourseTotal, visibleDashboardAnnouncements } from '../../lib/dashboard';
+import { dashboardOfferingIds, gradeDistribution, publishedCourseTotal, visibleDashboardAnnouncements } from '../../lib/dashboard';
 import { attendancePercentage, weightedAverage } from '../../lib/grading';
 import { can, PERMISSIONS } from '../../lib/permissions';
 import { calendarDay, formatDate } from '../../lib/date';
@@ -68,7 +68,7 @@ export function buildDashboard(user: User, query: DashboardQuery, locale: Locale
   const reviews = submissions.filter(submission => submission.score === null && assignments.some(item => item.id === submission.assignment_id && ids.includes(item.offering_id))).length;
   const metrics: DashboardMetric[] = user.role === 'student' ? [{ key: 'average', value: weightedAverage(results), percent: true }, { key: 'attendance', value: attendance, percent: true }, { key: 'courses', value: ids.length }] :
     user.role === 'teacher' ? [{ key: 'courses', value: ids.length }, { key: 'students', value: new Set(enrollments.filter(item => ids.includes(item.offering_id)).map(item => item.student_id)).size }, ...(can(user, PERMISSIONS.manageAssignments) ? [{ key: 'reviews' as const, value: reviews }] : [{ key: 'attendance' as const, value: attendance, percent: true }])] :
-      [{ key: 'students', value: users.filter(item => item.role === 'student').length }, { key: 'teachers', value: users.filter(item => item.role === 'teacher').length }, { key: 'courses', value: ids.length }, { key: 'attendance', value: attendance, percent: true }];
+      [{ key: 'students', value: users.filter(item => item.role === 'student').length }, { key: 'teachers', value: users.filter(item => item.role === 'teacher').length }, { key: 'courses', value: ids.length }, { key: 'reviews', value: reviews }];
   const weekday = ((new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
   const todayClasses = offerings.filter(item => selected.includes(item.id)).flatMap(offering => offering.schedule.filter(slot => slot.weekday === weekday).map(slot => ({ ...slot, course: courseFor(offering.id).name, teacher: users.find(item => item.id === offering.teacher_id)?.name ?? '' }))).sort((a, b) => a.start.localeCompare(b.start));
   const work: DashboardWork[] = user.role === 'student' ? [] : selected.flatMap(id => {
@@ -102,5 +102,5 @@ export function buildDashboard(user: User, query: DashboardQuery, locale: Locale
     const percentage = attendancePercentage(attendanceRecords.filter(record => sessions.has(record.session_id) && (user.role !== 'student' || record.student_id === user.id)).map(record => record.status), settings.attendance_counted_statuses, sessionCount(selectedIds, date));
     return percentage === null ? [] : [{ label: formatDate(date, locale), attendance: percentage }];
   });
-  return { forbidden: !!query.offering_id && !ids.includes(query.offering_id), tasks, files, work, recentSubmissions, latestGrades, summary: { role: user.role, as_of: today, semester: currentSemester ?? null, metrics, courses: dashboardCourses, today: todayClasses, latest_grades: latestGrades.slice(0, 3), pending_work: work.slice(0, 3), recent_submissions: recentSubmissions.slice(0, 3), announcements: visibleAnnouncements, attendance_series: series } };
+  return { forbidden: !!query.offering_id && !ids.includes(query.offering_id), tasks, files, work, recentSubmissions, latestGrades, summary: { role: user.role, as_of: today, semester: currentSemester ?? null, metrics, courses: dashboardCourses, today: todayClasses, latest_grades: latestGrades.slice(0, 3), pending_work: work.slice(0, 3), recent_submissions: recentSubmissions.slice(0, 3), announcements: visibleAnnouncements, attendance_series: series, grade_distribution: user.role !== 'student' && canSeeDashboardGrades(user) ? gradeDistribution(selected, enrollments, gradeComponents, gradeEntries) : [] } };
 }

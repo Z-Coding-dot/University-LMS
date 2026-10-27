@@ -1,0 +1,33 @@
+# Implementation decisions
+
+- Scope: Phase 0 was the previous checkpoint; the user's continuation resumes phases 1–5, including academic administration, courses, content, dashboards and hardening.
+- Runtime: Laravel 12 is the newest major compatible with PHP 8.2; Composer locked framework 12.70.1 and Sanctum 4.3.3.
+- Environment: XAMPP PHP 8.2.12 and Composer work; MariaDB 10.4.32's client exists but no server listens at 127.0.0.1:3306; use SQLite in-memory only for tests, with MySQL integration still pending.
+- Staff semester selection: semester containing today's Kabul date, otherwise latest already-started semester, otherwise null; break equal-start ties by ID. No current semester gives an empty offering scope.
+- Store profile placement and institutional ID on users; UserResource supplies the contract's nested `profile` object and suppresses legacy forced-change flags for managed accounts.
+- Grade publication status belongs exclusively to course_offerings; grade resources derive entry status from that offering, preventing independently inconsistent flags.
+- Use explicit lecture_upload, assignment_upload and submission_upload pivots rather than a polymorphic attachment pivot so every relation has real foreign keys.
+- Sanctum's token owner morph supports only User in this application and has an additional real FK to users; cookie sessions also reference users.
+- All scalar searchable/sortable columns and FKs have indexes; MySQL TEXT fields also receive full-text indexes through Laravel's schema API (omitted for SQLite tests), while bound LIKE searches preserve the contract's substring semantics and do not rely on those full-text indexes.
+- Academic settings use the fixed primary key 1 through the seeder/service API; arbitrary direct database writes are outside that singleton boundary.
+- Account identifiers are allocated under a transaction and locked per-role sequence; a keyed, non-API password fingerprint ledger prevents generated-password reuse without storing plaintext.
+- Bcrypt receives the hexadecimal SHA-256 digest of every password, preserving the contract's opaque 128-character passwords beyond bcrypt's 72-byte truncation; all creation, factory, verification and rotation paths use the same PasswordHasher, and ordinary imported bcrypt hashes require an explicit migration.
+- Cookie/token selection occurs in a request middleware after configuration loads, so token requests never accidentally require CSRF even with a SPA Origin header; token expiry is the session lifetime (120 minutes by default).
+- Cookie login stores its password fingerprint immediately, so an old in-flight session write after a reset is rejected even before that session's first authenticated read.
+- Locale follows the first Accept-Language preference (en or fa/fa-AF), defaults to fa, and all API/Sanctum errors are JSON regardless of Accept; CSRF failures use Laravel's 419 and login throttling uses 429.
+- HTTP 422 for post_max_size overflow is rendered globally; public .user.ini sets 30M/32M limits, but hosts may override these values.
+- Both installer paths share a filesystem lock and idempotent ProductionSeeder; they never reset an existing administrator, and a successful install creates storage/installed.lock.
+- The installer is stateless and omits database session/CSRF middleware so it can bootstrap an empty database; APP_KEY and auth mode are validated before migrations.
+- The web installer requires a configured token of at least 32 characters, never returns its token or initial password, and becomes 404 after installation; remove its environment token after use.
+- GET /api/v1/files/{id} implements the requested private download contract; URLs never expose paths or credentials, and the frontend API client supplies cookies or bearer tokens for downloads.
+- Cross-offering schedule/enrollment/instructor writes lock the semester before the offering, so concurrent schedule checks are serialized; enrollment also locks student rows and rechecks active status/capacity inside the transaction.
+- Grade transitions reject unsupported lifecycle changes with 422; a teacher's locked-to-published request returns 403 because unlocking is administrator-only.
+- New component rows are inserted before omitted components are deleted, preventing ID/score reuse even on SQLite; retained entries prevent reducing their component maximum below an existing score.
+- DTO aggregate feeds use ListQuery's collection adapter for the same bounded pagination, sort whitelist and localized substring search as database lists; authorizations and semester filters run before aggregation.
+- Multipart upload transport uses repeated files[] parts, which PHP parses as the contract's files array; the mock accepts files[] and its legacy files spelling.
+- Upload MIME detection uses finfo, an extension-specific allowlist and bounded ZIP package-marker checks for OOXML, without archive extraction or a required ZIP extension. Legacy Office files use their OLE container MIME types.
+- Attachment reuse permits retained authorized attachments and new uploads matching uploader/offering/purpose; stored content, size and presence are rechecked while upload rows are locked against cleanup.
+- DemoSeeder imports a generated snapshot of the executable frontend fixtures and copies their six ZIP study packs into private storage; attachment IDs are allocated per offering/purpose to satisfy real FK and reuse rules.
+- A nullable translations JSON column on seeded teaching content, announcements and submission feedback preserves seed localization; mutations clear it and never translate user-authored text.
+- Dashboard attendance labels use localized Gregorian month names through Carbon without requiring PHP intl; date-only API fields remain Gregorian ISO, and frontend calendar controls retain Solar Hijri display.
+- Local verification uses SQLite in-memory because MySQL remains offline; no production/MySQL migration or live shared-hosting verification has been claimed.

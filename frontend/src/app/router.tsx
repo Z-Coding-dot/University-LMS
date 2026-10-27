@@ -41,8 +41,8 @@ export const router = createBrowserRouter([
         { path: '/admin/unlock-grades', lazy: async () => ({ Component: (await import('../features/admin/pages/unlock-grades-page')).UnlockGradesPage }) },
       ] },
       { path: '/403', element: <ErrorPage kind="forbidden" /> },
+      { path: '*', element: <ErrorPage kind="notFound" /> },
       ] },
     ] },
   ] },
-  { path: '*', element: <ErrorPage kind="notFound" /> },
 ]);

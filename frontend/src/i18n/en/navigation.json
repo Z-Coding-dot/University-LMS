@@ -18,5 +18,15 @@
   "grades": "Gradebook",
   "performance": "Performance",
   "announcements": "Announcements",
-  "activity": "Teaching activity"
+  "activity": "Teaching activity",
+  "mobile": {
+    "workspace": "Home",
+    "schedule": "Schedule",
+    "courses": "Courses",
+    "results": "Results",
+    "grades": "Grades",
+    "offerings": "Classes",
+    "structure": "Subjects",
+    "activity": "Activity"
+  }
 }

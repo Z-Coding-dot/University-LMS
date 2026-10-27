@@ -34,5 +34,6 @@ export interface DashboardSummary {
   role: Role; as_of: string; semester: Semester | null; metrics: DashboardMetric[];
   courses: DashboardCourse[]; today: DashboardClass[]; latest_grades: DashboardGrade[];
   announcements: DashboardAnnouncement[]; attendance_series: { label: string; attendance: number }[];
+  grade_distribution: { label: string; students: number }[];
   pending_work: DashboardWork[]; recent_submissions: DashboardSubmission[];
 }

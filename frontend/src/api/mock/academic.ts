@@ -175,7 +175,7 @@ export function handleAcademic(ctx: MockContext) {
     const offeringId = Number(body.get('offering_id')); requireOffering(ctx, offeringId);
     const purpose = String(body.get('purpose'));
     if (purpose === 'assignment') requireTeacher(PERMISSIONS.manageAssignments); else if (purpose === 'lecture') requireTeacher(PERMISSIONS.manageMaterials); else if (purpose !== 'submission' || user.role !== 'student') return fail(ctx);
-    const files = body.getAll('files').filter((item): item is File => item instanceof File);
+    const files = [...body.getAll('files[]'), ...body.getAll('files')].filter((item): item is File => item instanceof File);
     if (!files.length || files.length > UPLOAD_LIMITS.maxFiles) return fail(ctx, 422, 'academic:invalidFiles');
     for (const file of files) { const error = validateUpload(file); if (error) return fail(ctx, 422, error); }
     const result = files.map(file => {

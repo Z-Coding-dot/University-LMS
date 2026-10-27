@@ -33,7 +33,7 @@ export const academicApi = {
   announcements: (params: ListParams, signal: AbortSignal) => api.get<PaginatedResponse<AnnouncementView>>('/announcements', { params, signal }).then(response => response.data),
   saveAnnouncement: (input: unknown, id?: number) => send(id ? 'patch' : 'post', id ? `/announcements/${id}` : '/announcements', input),
   upload: async (files: File[], offeringId: number, purpose: 'submission' | 'assignment' | 'lecture', onProgress: (progress: number) => void) => {
-    const body = new FormData(); body.set('offering_id', String(offeringId)); body.set('purpose', purpose); files.forEach(file => body.append('files', file));
+    const body = new FormData(); body.set('offering_id', String(offeringId)); body.set('purpose', purpose); files.forEach(file => body.append('files[]', file));
     return (await api.post<ApiResponse<Attachment[]>>('/uploads', body, { timeout: 120000, onUploadProgress: event => onProgress(event.total ? event.loaded / event.total * 100 : 0) })).data.data;
   },
 };

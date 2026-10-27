@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'numeric' => '????? :attribute ???? ??? ????.',
+    'date_format' => '????? :attribute ???? ?? ???? :format ?????? ????? ????.',
+    'after' => '????? :attribute ???? ?? ?? :date ????.',
+    'after_or_equal' => '????? :attribute ???? ????? ?? ?? ?? :date ????.',
+    'required_if' => '???? :other ????? :value ???? ????? :attribute ????? ???.',
+    'file' => '????? :attribute ???? ???? ????? ????.',
+    'uploaded' => '???? ???????? ???. ??????? ??? ???? ?? ????? ????.',
+    'gt' => ['numeric' => '????? :attribute ???? ????? ?? :value ????.'],
+    'required' => 'خانهٔ :attribute ضروری است.', 'present' => 'خانهٔ :attribute باید موجود باشد.',
+    'string' => 'مقدار :attribute باید متن باشد.', 'email' => 'یک آدرس ایمیل معتبر وارد کنید.',
+    'integer' => 'مقدار :attribute باید عدد صحیح باشد.', 'array' => 'مقدار :attribute باید فهرست باشد.',
+    'boolean' => 'مقدار :attribute باید درست یا نادرست باشد.',
+    'in' => 'مقدار انتخاب‌شدهٔ :attribute نامعتبر است.', 'exists' => 'مقدار انتخاب‌شدهٔ :attribute موجود نیست.',
+    'unique' => ':attribute قبلاً استفاده شده است.', 'distinct' => 'فهرست :attribute مقدار تکراری دارد.',
+    'confirmed' => 'تأیید :attribute مطابقت ندارد.', 'different' => 'مقادیر :attribute و :other باید متفاوت باشند.',
+    'unknown' => 'این خانه مجاز نیست.', 'sort' => 'یک خانهٔ معتبر برای مرتب‌سازی انتخاب کنید.',
+    'min' => ['file' => '??? ???? :attribute ???? ????? :min ???????? ????.', 'numeric' => 'مقدار :attribute باید حداقل :min باشد.', 'string' => ':attribute باید حداقل :min حرف داشته باشد.', 'array' => ':attribute باید حداقل :min مورد داشته باشد.'],
+    'max' => ['file' => '??? ???? :attribute ???? ?????? :max ???????? ????.', 'numeric' => 'مقدار :attribute نباید بیشتر از :max باشد.', 'string' => ':attribute نباید بیشتر از :max حرف داشته باشد.', 'array' => ':attribute نباید بیشتر از :max مورد داشته باشد.'],
+    'between' => ['numeric' => 'مقدار :attribute باید بین :min و :max باشد.', 'string' => ':attribute باید بین :min و :max حرف داشته باشد.', 'array' => ':attribute باید بین :min و :max مورد داشته باشد.'],
+    'password' => ['letters' => 'رمز عبور باید حرف داشته باشد.', 'mixed' => 'رمز عبور باید حروف بزرگ و کوچک داشته باشد.', 'numbers' => 'رمز عبور باید عدد داشته باشد.', 'symbols' => 'رمز عبور باید نشانه داشته باشد.', 'uncompromised' => 'رمز عبور دیگری انتخاب کنید.'],
+    'attributes' => ['name' => 'نام', 'email' => 'ایمیل', 'password' => 'رمز عبور', 'current_password' => 'رمز فعلی', 'locale' => 'زبان', 'identifier' => 'ایمیل ورود'],
+];

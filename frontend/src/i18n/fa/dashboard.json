@@ -92,5 +92,13 @@
     "attendance": "تکمیل حاضری",
     "grades": "بررسی نمرات پیش‌نویس"
   },
-  "missingRecords": "ثبت‌های باقی‌مانده"
+  "missingRecords": "ثبت‌های باقی‌مانده",
+  "performanceDescription": "حاضری و نمرات محصلان در مضمون‌ها.",
+  "studentGradesChart": "نمودار نمرات محصلان",
+  "studentGradesChartDescription": "مجموع وزنی از ۱۰۰، شامل مسوده‌های ذخیره‌شده. تنها محصلان با نمرات کامل شمارش می‌شوند؛ هر محصل در هر مضمون یک بار.",
+  "gradeResults": "نتایج محصلان",
+  "noCompleteGrades": "هنوز نمرات کامل موجود نیست",
+  "pendingGrades": "نمرات قابل بررسی",
+  "pendingGradesDescription": "بررسی مسوده‌ها و نظارت بر نشر نمرات.",
+  "noPendingGrades": "مسوده‌ای برای بررسی نیست"
 }

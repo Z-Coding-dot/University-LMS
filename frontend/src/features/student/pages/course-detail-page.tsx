@@ -43,7 +43,7 @@ export function CourseDetailPage() {
   const tabs = [
     { value: 'weeks', label: t('weeklyLearning'), content: <CourseWeeks offeringId={id} /> },
     ...(!student ? [{ value: 'students', label: t('students'), content: <CourseRoster id={id} /> }] : []),
-    { value: 'attendance', label: t('attendance'), content: student ? <CourseRecords id={id} kind="attendance" /> : <AttendanceEntry id={id} /> },
+    ...(user?.role !== 'admin' ? [{ value: 'attendance', label: t('attendance'), content: student ? <CourseRecords id={id} kind="attendance" /> : <AttendanceEntry id={id} /> }] : []),
     ...(student || can(user, PERMISSIONS.enterGrades) || can(user, PERMISSIONS.publishGrades) ? [{ value: 'grades', label: t('grades'), content: student ? <CourseRecords id={id} kind="grades" /> : <GradeEntry id={id} /> }] : []),
     { value: 'assignments', label: t('assignments'), content: <Assignments offeringId={id} /> },
   ];

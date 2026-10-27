@@ -20,6 +20,7 @@ export interface ResultCourse { id: number; code: string; name: Course['name']; 
 export interface SemesterResult { semester: Semester; courses: ResultCourse[]; average: number | null }
 export interface ResultsResponse { semesters: SemesterResult[]; cumulative_average: number | null }
 export interface AcademicCatalog { faculties: Faculty[]; departments: Department[]; academic_years: AcademicYear[]; semesters: Semester[]; courses: Course[]; teachers: User[]; students: User[]; offerings: CourseView[] }
+export interface TeacherActivity { id: number; name: string; courses: number; students: number; assignments: number; materials: number; graded: number; last_activity: string | null }
 export interface AnnouncementView extends Announcement { author_name: string }
 export type StructureResource = 'faculties' | 'departments' | 'academic-years' | 'semesters' | 'courses';
 export interface StructureRow { id: number; name: string | Course['name']; faculty_id?: number; academic_year_id?: number; department_id?: number; code?: string; credits?: number; starts_at?: string; ends_at?: string }

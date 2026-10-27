@@ -92,5 +92,13 @@
     "attendance": "Complete attendance",
     "grades": "Review draft grades"
   },
-  "missingRecords": "Missing records"
+  "missingRecords": "Missing records",
+  "performanceDescription": "Attendance and student grade performance for your courses.",
+  "studentGradesChart": "Student grade distribution",
+  "studentGradesChartDescription": "Weighted totals out of 100, including saved drafts. Only students with all assessment scores are included. Each student is counted once per course; filter by course to inspect one class.",
+  "gradeResults": "Student course results",
+  "noCompleteGrades": "No complete student grades yet",
+  "pendingGrades": "Gradebooks to review",
+  "pendingGradesDescription": "Review draft gradebooks and monitor publication.",
+  "noPendingGrades": "No draft gradebooks to review"
 }

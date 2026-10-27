@@ -2,16 +2,27 @@ import type { AcademicYear, Course, CourseOffering, Department, Faculty, Semeste
 import type { StructureResource, StructureRow } from '../types/academic';
 import { academicSettingsSchema, enrollmentSchema, offeringSchema, scheduleSchema, structureSchemas } from '../../features/admin/academic-schemas';
 import { slotsOverlap } from '../../lib/academic-rules';
-import { academicYears, courses, departments, enrollments, faculties, offerings, semesters, settings, users } from './fixtures';
+import { academicYears, announcements, assignments, attendanceSessions, courses, departments, enrollments, faculties, gradeComponents, gradeEntries, lectures, offerings, semesters, settings, users } from './fixtures';
 import { courseView, gradeStates } from './model';
 import { fail, nextId, page, respond, validate, type MockContext } from './http';
 
 const structure = { faculties, departments, 'academic-years': academicYears, semesters, courses };
 export function handleAdminAcademic(ctx: MockContext) {
-  if (!/^\/admin\/(catalog|structure|offerings|settings|locked-grades)(?:\/|$)/.test(ctx.path)) return undefined;
+  if (!/^\/admin\/(catalog|structure|offerings|settings|locked-grades|teacher-activity)(?:\/|$)/.test(ctx.path)) return undefined;
   if (ctx.user.role !== 'admin') return fail(ctx);
   const { path, method, config, body, locale } = ctx;
   const ok = (data: unknown, status = 200) => respond(config, status, { data: structuredClone(data) });
+  if (path === '/admin/teacher-activity' && method === 'GET') {
+    const rows = users.filter(user => user.role === 'teacher').map(teacher => {
+      const ids = offerings.filter(row => row.teacher_id === teacher.id).map(row => row.id);
+      const components = new Set(gradeComponents.filter(row => ids.includes(row.offering_id)).map(row => row.id));
+      const grades = gradeEntries.filter(row => components.has(row.component_id));
+      const materials = lectures.filter(row => ids.includes(row.offering_id));
+      const dates = [...materials.map(row => row.updated_at), ...grades.map(row => row.updated_at), ...announcements.filter(row => row.author_id === teacher.id && row.offering_id !== null && ids.includes(row.offering_id)).map(row => row.created_at)].sort();
+      return { id: teacher.id, name: teacher.name, courses: ids.length, students: new Set(enrollments.filter(row => ids.includes(row.offering_id)).map(row => row.student_id)).size, assignments: assignments.filter(row => ids.includes(row.offering_id)).length, materials: materials.length, graded: grades.length, last_activity: dates.at(-1) ?? null };
+    });
+    return page(ctx, rows, { name: row => row.name, courses: row => row.courses, assignments: row => row.assignments, materials: row => row.materials, graded: row => row.graded, last_activity: row => row.last_activity }, 'name');
+  }
   if (path === '/admin/catalog' && method === 'GET') return ok({ faculties, departments, academic_years: academicYears, semesters, courses, teachers: users.filter(user => user.role === 'teacher'), students: users.filter(user => user.role === 'student'), offerings: offerings.map(courseView) });
   if (path === '/admin/settings' && method === 'PUT') { Object.assign(settings, validate(academicSettingsSchema, body, config)); return ok(settings); }
   const match = path.match(/^\/admin\/structure\/(faculties|departments|academic-years|semesters|courses)(?:\/(\d+))?$/);
@@ -20,6 +31,12 @@ export function handleAdminAcademic(ctx: MockContext) {
     if (!match[2] && method === 'GET') return page(ctx, rows, { name: row => typeof row.name === 'string' ? row.name : row.name[locale], id: row => row.id }, 'name');
     const existing = match[2] ? rows.find(row => row.id === id) : undefined;
     if (match[2] && !existing) return fail(ctx, 404, 'common:notFoundTitle');
+    if (existing && method === 'DELETE') {
+      const referenced = resource === 'faculties' ? departments.some(row => row.faculty_id === id) : resource === 'departments' ? courses.some(row => row.department_id === id) || users.some(row => row.profile.department_id === id) : resource === 'academic-years' ? semesters.some(row => row.academic_year_id === id) : resource === 'semesters' ? offerings.some(row => row.semester_id === id) || users.some(row => row.profile.current_semester_id === id) : offerings.some(row => row.course_id === id);
+      if (referenced) return fail(ctx, 422, 'admin:recordInUse');
+      rows.splice(rows.findIndex(row => row.id === id), 1);
+      return respond(config, 204, null);
+    }
     if ((!match[2] && method === 'POST') || (existing && method === 'PATCH')) {
       // Each resource schema preserves its own fields; parents are validated below.
       const input = validate(structureSchemas[resource], body, config);
@@ -45,8 +62,8 @@ export function handleAdminAcademic(ctx: MockContext) {
     }
   }
   if ((path === '/admin/offerings' || path === '/admin/locked-grades') && method === 'GET') {
-    const semester = Number(config.params?.semester_id);
-    const rows = offerings.filter(row => (!semester || row.semester_id === semester) && (path !== '/admin/locked-grades' || gradeStates.get(row.id) === 'locked')).map(courseView);
+    const semester = Number(config.params?.semester_id); const teacher = Number(config.params?.teacher_id);
+    const rows = offerings.filter(row => (!semester || row.semester_id === semester) && (!teacher || row.teacher_id === teacher) && (path !== '/admin/locked-grades' || gradeStates.get(row.id) === 'locked')).map(courseView);
     return page(ctx, rows, { name: row => row.course.name[locale], teacher: row => row.teacher.name, capacity: row => row.capacity, students: row => row.student_count }, 'name');
   }
   const offeringMatch = path.match(/^\/admin\/offerings(?:\/(\d+)(?:\/(candidates|enrollments|schedule))?)?$/);
@@ -54,6 +71,12 @@ export function handleAdminAcademic(ctx: MockContext) {
     const id = Number(offeringMatch[1]); const action = offeringMatch[2];
     const existing = offeringMatch[1] ? offerings.find(row => row.id === id) : undefined;
     if (offeringMatch[1] && !existing) return fail(ctx, 404, 'common:notFoundTitle');
+    if (existing && !action && method === 'DELETE') {
+      if (enrollments.some(row => row.offering_id === id) || attendanceSessions.some(row => row.offering_id === id) || gradeComponents.some(row => row.offering_id === id) || assignments.some(row => row.offering_id === id) || lectures.some(row => row.offering_id === id) || announcements.some(row => row.offering_id === id)) return fail(ctx, 422, 'admin:recordInUse');
+      offerings.splice(offerings.findIndex(row => row.id === id), 1);
+      gradeStates.delete(id);
+      return respond(config, 204, null);
+    }
     if (!action && ((!offeringMatch[1] && method === 'POST') || (existing && method === 'PATCH'))) {
       const input = validate(offeringSchema, body, config);
       if (!courses.some(row => row.id === input.course_id) || !semesters.some(row => row.id === input.semester_id) || !users.some(row => row.id === input.teacher_id && row.role === 'teacher' && row.status === 'active')) return fail(ctx, 422, 'admin:invalidParent');
